@@ -38,27 +38,9 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectView, health }) => {
         {/* Identidad de Marca Oficial */}
         <div className="flex items-center space-x-2.5">
           <BrandLogo size="sm" />
-          <div className="w-[124px] h-[32px] flex items-center overflow-hidden" title="CrediRisk">
-            <TechText
-              text="CrediRisk"
-              fontFamily="'Manrope', sans-serif"
-              fontWeight={800}
-              fontSize={24}
-              color={isDark ? '#FFFFFF' : '#0B1220'}
-              accentColor={isDark ? '#38BDF8' : '#2563EB'}
-              dashLength={3}
-              dashGap={2}
-              strokeWidth={1.2}
-              lineStyle="dashed"
-              reveal="letter"
-              draggable={false}
-              sweep={true}
-              speed={0.8}
-              labels={true}
-              selection={true}
-              className="w-full h-full"
-            />
-          </div>
+          <span className="font-display font-extrabold text-base tracking-tight text-slate-950 dark:text-white leading-none">
+            CrediRisk
+          </span>
         </div>
 
         {/* Acciones y selector de tema */}
@@ -92,8 +74,29 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectView, health }) => {
             <span>Deep Learning</span>
           </div>
           
-          <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-950 dark:text-white leading-[1.05]">
-            CrediRisk
+          <h1 
+            className="w-[280px] sm:w-[330px] lg:w-[370px] h-[60px] sm:h-[72px] lg:h-[82px] flex items-center select-none -ml-1 sm:-ml-2 overflow-visible"
+            aria-label="CrediRisk"
+          >
+            <TechText
+              text="CrediRisk"
+              fontFamily="'Manrope', sans-serif"
+              fontWeight={900}
+              fontSize={56}
+              color={isDark ? '#FFFFFF' : '#0B1220'}
+              accentColor={isDark ? '#38BDF8' : '#2563EB'}
+              dashLength={4}
+              dashGap={2}
+              strokeWidth={1.5}
+              lineStyle="dashed"
+              reveal="letter"
+              draggable={false}
+              sweep={true}
+              speed={0.8}
+              labels={true}
+              selection={true}
+              className="w-full h-full"
+            />
           </h1>
           
           <p className="mt-3 text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl font-sans">
