@@ -15,8 +15,26 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" content="#0B1220" />
-    <script type="module" crossorigin src="/assets/index-BJJx1A0r.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-Ol2-hRcz.css">
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('credirisk-theme');
+          var systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var isDark = saved === 'dark' || ((!saved || saved === 'system') && systemDark);
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.setAttribute('data-theme', 'dark');
+            document.documentElement.style.colorScheme = 'dark';
+          } else {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.setAttribute('data-theme', 'light');
+            document.documentElement.style.colorScheme = 'light';
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <script type="module" crossorigin src="/assets/index-Cs6qjIUX.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BfhIdOGV.css">
   </head>
   <body>
     <div id="root"></div>

@@ -18,7 +18,8 @@ import {
   ChevronRight,
   ShieldCheck,
   TrendingUp,
-  Info
+  Info,
+  AlertTriangle
 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { PrintReport } from './PrintReport';
@@ -42,6 +43,47 @@ const STEP_LABELS = [
   { step: 4, title: 'Perfil Laboral', subtitle: 'Ocupación y contrato' },
   { step: 5, title: 'Diagnóstico Final', subtitle: 'Revisión y cálculo' },
 ];
+
+const getFactorDisplayTitle = (factor: { variable: string; impacto: string }): string => {
+  const normVar = factor.variable.toLowerCase();
+  if (normVar.includes('cobertura')) {
+    return factor.impacto === 'negativo'
+      ? 'Cobertura de cuota insuficiente'
+      : 'Cobertura de cuota adecuada';
+  }
+  if (normVar.includes('score')) {
+    return factor.impacto === 'negativo'
+      ? 'Score crediticio bajo'
+      : 'Score crediticio favorable';
+  }
+  if (normVar.includes('endeudamiento')) {
+    return factor.impacto === 'negativo'
+      ? 'Nivel de endeudamiento elevado'
+      : 'Nivel de endeudamiento saludable';
+  }
+  if (normVar.includes('mora')) {
+    return factor.impacto === 'negativo'
+      ? 'Historial de mora con retrasos'
+      : 'Historial crediticio al día';
+  }
+  return factor.variable;
+};
+
+const parseComparisonValue = (val: string) => {
+  if (val.includes(' vs ')) {
+    const parts = val.split(' vs ');
+    return {
+      isComparison: true,
+      first: parts[0]?.trim() || '',
+      second: parts[1]?.trim() || '',
+    };
+  }
+  return {
+    isComparison: false,
+    first: val,
+    second: '',
+  };
+};
 
 export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
   onBackToHome,
@@ -219,8 +261,8 @@ export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
               <span className="font-display font-bold text-sm tracking-tight text-slate-900 dark:text-white">
                 CrediRisk
               </span>
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
-                / Evaluador Cuantitativo
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-sans">
+                / Evaluador
               </span>
             </div>
           </div>
@@ -368,39 +410,109 @@ export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
                   <span>Factores Determinantes Identificados por el Modelo</span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                  {prediction.factores_relevantes.map((factor, idx) => (
-                    <div 
-                      key={idx} 
-                      className="p-4 rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/60 dark:bg-slate-900/60 flex items-start justify-between gap-3 text-xs"
-                    >
-                      <div className="space-y-1">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-bold text-slate-900 dark:text-white font-sans">
-                            {factor.variable}
-                          </span>
-                          <span 
-                            className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold uppercase ${
-                              factor.impacto === 'positivo'
-                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
-                                : factor.impacto === 'negativo'
-                                ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
-                                : 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {prediction.factores_relevantes.map((factor, idx) => {
+                    const comparison = parseComparisonValue(factor.valor);
+                    const displayTitle = getFactorDisplayTitle(factor);
+                    const isNegative = factor.impacto === 'negativo';
+                    const isPositive = factor.impacto === 'positivo';
+
+                    return (
+                      <div 
+                        key={idx} 
+                        className={`p-4 sm:p-5 rounded-2xl border transition-all flex flex-col justify-between gap-3.5 ${
+                          isNegative
+                            ? 'bg-rose-50/70 dark:bg-rose-950/25 border-rose-200/80 dark:border-rose-900/60'
+                            : isPositive
+                            ? 'bg-emerald-50/70 dark:bg-emerald-950/25 border-emerald-200/80 dark:border-emerald-900/60'
+                            : 'bg-slate-50/80 dark:bg-slate-900/60 border-slate-200/80 dark:border-slate-800/80'
+                        }`}
+                      >
+                        {/* Cabecera del factor: Icono, Título y Distintivo */}
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center space-x-2.5">
+                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                              isNegative
+                                ? 'bg-rose-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-400'
+                                : isPositive
+                                ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400'
+                                : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                            }`}>
+                              {isNegative ? (
+                                <AlertTriangle className="w-4 h-4" />
+                              ) : isPositive ? (
+                                <TrendingUp className="w-4 h-4" />
+                              ) : (
+                                <Info className="w-4 h-4" />
+                              )}
+                            </div>
+                            <h4 className="font-display font-bold text-sm tracking-tight text-slate-900 dark:text-white">
+                              {displayTitle}
+                            </h4>
+                          </div>
+
+                          <span
+                            className={`px-2.5 py-0.5 rounded-md text-[10px] font-sans font-semibold uppercase tracking-wider shrink-0 ${
+                              isNegative
+                                ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/60 dark:text-rose-200'
+                                : isPositive
+                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200'
+                                : 'bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-200'
                             }`}
                           >
-                            {factor.impacto}
+                            {isNegative ? 'Desfavorable' : isPositive ? 'Favorable' : 'Neutro'}
                           </span>
                         </div>
-                        <p className="text-slate-600 dark:text-slate-400 text-[11px] leading-relaxed">
+
+                        {/* Descripción detallada */}
+                        <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-sans">
                           {factor.detalle}
                         </p>
-                      </div>
 
-                      <div className="text-right font-mono text-xs font-bold text-slate-900 dark:text-white shrink-0">
-                        {factor.valor}
+                        {/* Valores e indicadores financieros bien espaciados y alineados */}
+                        {comparison.isComparison ? (
+                          <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <div className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 shadow-2xs">
+                                <span className="text-[11px] font-sans text-slate-500 dark:text-slate-400">
+                                  Disponible:
+                                </span>
+                                <span className="font-mono text-xs font-bold text-slate-900 dark:text-white tabular-nums">
+                                  {comparison.first.replace(' disponible', '')}
+                                </span>
+                              </div>
+
+                              <span className="text-xs font-sans text-slate-400 dark:text-slate-500 font-medium">
+                                vs
+                              </span>
+
+                              <div className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border shadow-2xs ${
+                                isNegative 
+                                  ? 'bg-rose-100/70 dark:bg-rose-950/60 border-rose-200 dark:border-rose-900/70 text-rose-900 dark:text-rose-200'
+                                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/80 text-slate-900 dark:text-white'
+                              }`}>
+                                <span className="text-[11px] font-sans text-slate-500 dark:text-slate-400">
+                                  Cuota estimada:
+                                </span>
+                                <span className="font-mono text-xs font-bold tabular-nums">
+                                  {comparison.second.replace(' cuota', '')}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-xs">
+                            <span className="text-[11px] font-sans text-slate-500 dark:text-slate-400">
+                              Métrica observada:
+                            </span>
+                            <span className="font-mono text-xs font-bold text-slate-900 dark:text-white tabular-nums px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 shadow-2xs">
+                              {factor.valor}
+                            </span>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}

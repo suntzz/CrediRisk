@@ -10,6 +10,8 @@ import {
 import { ThemeToggle } from './ThemeToggle';
 import { BrandLogo } from './BrandLogo';
 import { QuantitativeMesh } from './QuantitativeMesh';
+import { TechText } from './TechText';
+import { useTheme } from '../context/ThemeContext';
 import type { HealthStatus, ViewMode } from '../types';
 
 interface HomeViewProps {
@@ -19,10 +21,11 @@ interface HomeViewProps {
 
 export const HomeView: React.FC<HomeViewProps> = ({ onSelectView, health }) => {
   const isHealthy = health?.status === 'healthy';
+  const { isDark } = useTheme();
 
   return (
     <div className="min-h-[100dvh] flex flex-col justify-between bg-slate-50 dark:bg-[#0B1220] text-slate-900 dark:text-slate-100 transition-colors relative overflow-hidden">
-      {/* Retícula matemática técnica de fondo */}
+      {/* Retícula técnica sutil de fondo */}
       <div className="absolute inset-0 bg-atelier-grid opacity-75 pointer-events-none" aria-hidden="true" />
       
       {/* Constelación dimensional abstracta de 23 variables */}
@@ -32,23 +35,36 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectView, health }) => {
 
       {/* Navegación Superior */}
       <header className="relative z-10 w-full max-w-6xl mx-auto px-6 py-5 flex items-center justify-between border-b border-slate-200/70 dark:border-slate-800/60 backdrop-blur-sm">
-        {/* Identidad de Marca */}
-        <div className="flex items-center space-x-3">
+        {/* Identidad de Marca Oficial */}
+        <div className="flex items-center space-x-2.5">
           <BrandLogo size="sm" />
-          <div className="flex flex-col">
-            <span className="font-display font-extrabold text-base tracking-tight text-slate-950 dark:text-white leading-none">
-              CrediRisk
-            </span>
-            <span className="text-[10px] font-mono uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400 mt-0.5">
-              Quantitative Atelier
-            </span>
+          <div className="w-[124px] h-[32px] flex items-center overflow-hidden" title="CrediRisk">
+            <TechText
+              text="CrediRisk"
+              fontFamily="'Manrope', sans-serif"
+              fontWeight={800}
+              fontSize={24}
+              color={isDark ? '#FFFFFF' : '#0B1220'}
+              accentColor={isDark ? '#38BDF8' : '#2563EB'}
+              dashLength={3}
+              dashGap={2}
+              strokeWidth={1.2}
+              lineStyle="dashed"
+              reveal="letter"
+              draggable={false}
+              sweep={true}
+              speed={0.8}
+              labels={true}
+              selection={true}
+              className="w-full h-full"
+            />
           </div>
         </div>
 
         {/* Acciones y selector de tema */}
         <div className="flex items-center space-x-3 sm:space-x-4">
           <div 
-            className="hidden sm:inline-flex items-center space-x-2 px-2.5 py-1 rounded-md text-[11px] font-mono bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 shadow-2xs"
+            className="hidden md:inline-flex items-center space-x-2 px-2.5 py-1 rounded-md text-[11px] font-mono bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 shadow-2xs"
             title={isHealthy ? 'Servicio de inferencia activo' : 'Verificando servicio...'}
           >
             <span className={`w-1.5 h-1.5 rounded-full ${isHealthy ? 'bg-emerald-500' : 'bg-amber-500'}`} />
@@ -69,7 +85,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectView, health }) => {
 
       {/* Área Principal: Composición Asimétrica Editorial */}
       <main className="relative z-10 w-full max-w-6xl mx-auto px-6 py-8 md:py-12 flex-1 flex flex-col justify-center">
-        {/* Titular y subtítulo exactos requeridos */}
+        {/* Titular y subtítulo exactos */}
         <div className="max-w-3xl mb-10 md:mb-12">
           <div className="inline-flex items-center space-x-2 px-2.5 py-1 rounded-md text-[11px] font-mono uppercase tracking-[0.14em] font-semibold bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-900/60 mb-3">
             <Binary className="w-3.5 h-3.5" />
@@ -85,7 +101,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectView, health }) => {
           </p>
         </div>
 
-        {/* Las dos experiencias principales: Bloques con identidad diferenciada */}
+        {/* Las dos experiencias principales */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
           {/* Opción 1: Evaluador de Crédito (Dominante, 7 columnas) */}
           <div 
@@ -162,15 +178,15 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectView, health }) => {
               {/* Métricas clave en formato tabular */}
               <div className="bg-slate-50 dark:bg-slate-950/60 rounded-xl p-3.5 border border-slate-200/80 dark:border-slate-800/80 mb-6 font-mono text-xs">
                 <div className="flex justify-between items-center py-1 border-b border-slate-200/60 dark:border-slate-800/60">
-                  <span className="text-slate-500">Modelo Final</span>
+                  <span className="text-slate-500 font-sans">Modelo Final</span>
                   <span className="font-semibold text-slate-900 dark:text-white">Ensemble Top-3</span>
                 </div>
                 <div className="flex justify-between items-center py-1 border-b border-slate-200/60 dark:border-slate-800/60">
-                  <span className="text-slate-500">Test ROC-AUC</span>
+                  <span className="text-slate-500 font-sans">Test ROC-AUC</span>
                   <span className="font-semibold text-blue-600 dark:text-blue-400 tabular-nums">0.7448</span>
                 </div>
                 <div className="flex justify-between items-center py-1">
-                  <span className="text-slate-500">Observaciones</span>
+                  <span className="text-slate-500 font-sans">Observaciones</span>
                   <span className="font-semibold text-slate-900 dark:text-white tabular-nums">49,650</span>
                 </div>
               </div>

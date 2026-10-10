@@ -18,7 +18,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
   className = '',
   isLoading = false,
 }) => {
-  const { theme } = useTheme();
+  const { isDark } = useTheme();
 
   const sizeClasses = {
     xs: 'w-6 h-6',
@@ -30,9 +30,9 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
 
   // Selección de activo optimizado según contraste de superficie
   let logoSrc = '/brand/credirisk-logo.png';
-  if (variant === 'light' || (variant === 'auto' && theme === 'light')) {
+  if (variant === 'light' || (variant === 'auto' && !isDark)) {
     logoSrc = '/brand/credirisk-logo-light.png';
-  } else if (variant === 'dark' || (variant === 'auto' && theme === 'dark')) {
+  } else if (variant === 'dark' || (variant === 'auto' && isDark)) {
     logoSrc = '/brand/credirisk-logo-dark.png';
   } else if (variant === 'mono') {
     logoSrc = '/brand/credirisk-logo-mono.png';

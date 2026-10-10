@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 
 /**
- * Recurso gráfico distintivo CrediRisk Quantitative Atelier:
+ * Recurso gráfico distintivo CrediRisk:
  * Representa la proyección dimensional de las 23 variables del solicitante
  * sobre una retícula matemática con pesos de covarianza y enlaces neuronales tenues.
  * Optimizado para rendimiento estricto, 0 dependencias pesadas y respeto por prefers-reduced-motion.
