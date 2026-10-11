@@ -67,22 +67,6 @@ export function generateBadgeDataUrls(student: BadgeStudent): { front: string; b
     fCtx.fillStyle = bgGrad;
     fCtx.fillRect(0, 0, width, height);
 
-    // Subtle Grid Pattern
-    fCtx.strokeStyle = 'rgba(59, 130, 246, 0.08)';
-    fCtx.lineWidth = 1;
-    for (let x = 0; x < width; x += 40) {
-      fCtx.beginPath();
-      fCtx.moveTo(x, 0);
-      fCtx.lineTo(x, height);
-      fCtx.stroke();
-    }
-    for (let y = 0; y < height; y += 40) {
-      fCtx.beginPath();
-      fCtx.moveTo(0, y);
-      fCtx.lineTo(width, y);
-      fCtx.stroke();
-    }
-
     // Top Header Banner
     const bannerGrad = fCtx.createLinearGradient(0, 0, width, 0);
     bannerGrad.addColorStop(0, '#1d4ed8');
