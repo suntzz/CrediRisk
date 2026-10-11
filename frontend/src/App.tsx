@@ -1,40 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { gsap } from 'gsap';
 import { ThemeProvider } from './context/ThemeContext';
+import { GlobalDock } from './components/GlobalDock';
+import { FaultyTerminal } from './components/FaultyTerminal';
 import { HomeView } from './components/HomeView';
 import { EvaluatorView } from './components/EvaluatorView';
 import { ModelLabView } from './components/ModelLabView';
 import { AboutUsView } from './components/AboutUsView';
 import { fetchHealth, fetchMetrics } from './services/api';
-import type { ApplicantFormData, HealthStatus, SystemMetrics, ViewMode } from './types';
-
-const DEFAULT_APPLICANT: ApplicantFormData = {
-  id_solicitud: 172745,
-  edad: 43.9,
-  ingreso_mensual: 202500.0,
-  obligaciones_mensuales: 153454.09,
-  estado_civil: 'Single / not married',
-  ingreso_disponible: 13522.91,
-  monto_solicitado: 835380.0,
-  plazo_meses: 48.0,
-  cuota_estimada: 35523.0,
-  tasa_interes_ea: 49.31,
-  nivel_endeudamiento_pct: 93.32,
-  score_crediticio: 585.0,
-  numero_creditos_activos: 2.0,
-  saldo_total_creditos: 2619045.0,
-  numero_cuotas_mora: 0.0,
-  dias_maximo_mora: 0.0,
-  porcentaje_pagos_oportunos: 100.0,
-  antiguedad_laboral_anios: 7.17,
-  patrimonio_indice: 4,
-  antiguedad_cliente_anios: 7.74,
-  linea_negocio: 'Cash loans',
-  tipo_contrato: 'Working',
-  personas_a_cargo: 1,
-  tipo_vivienda: 'House / apartment',
-  model_type: 'ensemble',
-};
+import type { HealthStatus, SystemMetrics, ViewMode } from './types';
 
 const getViewFromHash = (): ViewMode => {
   const hash = window.location.hash.replace(/^#\/?/, '').trim();
@@ -49,12 +23,28 @@ const MainContent: React.FC = () => {
   const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
   const [health, setHealth] = useState<HealthStatus | null>(null);
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
-  const viewContainerRef = useRef<HTMLDivElement>(null);
+  const viewContainerRef = useRef<HTMLElement>(null);
   const currentViewRef = useRef<ViewMode>(currentView);
+
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
+    return false;
+  });
 
   useEffect(() => {
     currentViewRef.current = currentView;
   }, [currentView]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const listener = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+      mediaQuery.addEventListener('change', listener);
+      return () => mediaQuery.removeEventListener('change', listener);
+    }
+  }, []);
 
   useEffect(() => {
     fetchHealth()
@@ -66,11 +56,10 @@ const MainContent: React.FC = () => {
       .catch(err => console.warn('Error cargando metricas:', err.message));
   }, []);
 
-  // Coordinated section navigation transition with GSAP
+  // Transición rápida, suave y natural entre páginas (100ms salida + 150ms entrada = 250ms total)
   const navigateTo = useCallback((targetView: ViewMode, updateHistory = true) => {
     if (targetView === currentViewRef.current || isTransitioning) return;
 
-    const fromView = currentViewRef.current;
     const container = viewContainerRef.current;
     const prefersReduced = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
@@ -84,11 +73,11 @@ const MainContent: React.FC = () => {
     }
 
     if (!container || prefersReduced) {
-      // Discrete, accessible cross-fade for reduced motion
       if (container) {
+        gsap.killTweensOf(container);
         gsap.to(container, {
           opacity: 0,
-          duration: 0.14,
+          duration: 0.08,
           ease: 'power2.inOut',
           onComplete: () => {
             setCurrentView(targetView);
@@ -98,7 +87,7 @@ const MainContent: React.FC = () => {
               { opacity: 0 },
               {
                 opacity: 1,
-                duration: 0.18,
+                duration: 0.1,
                 ease: 'power2.out',
                 onComplete: () => {
                   gsap.set(container, { clearProps: 'all' });
@@ -115,48 +104,27 @@ const MainContent: React.FC = () => {
       return;
     }
 
-    // Directional transition:
-    // Option 1 (evaluator, left card): slide/perspective fold left (-1)
-    // Option 2 (lab, right card): slide/perspective fold right (+1)
-    // Return to home: reverse directional motion
-    let direction = 0;
-    if (fromView === 'home') {
-      direction = targetView === 'evaluator' ? -1 : 1;
-    } else if (targetView === 'home') {
-      direction = fromView === 'evaluator' ? 1 : -1;
-    }
-
-    // 1. Exit animation: current page smoothly slides and tilts subtly
+    gsap.killTweensOf(container);
     gsap.to(container, {
       opacity: 0,
-      x: direction * 45,
-      rotateY: direction * 2.2,
-      scale: 0.985,
-      duration: 0.26,
-      ease: 'power2.in',
-      transformPerspective: 1100,
+      y: -6,
+      duration: 0.1,
+      ease: 'power2.inOut',
       onComplete: () => {
-        // 2. Switch view in React and scroll to top
         setCurrentView(targetView);
         window.scrollTo({ top: 0, behavior: 'instant' });
 
-        // 3. Entrance animation: new section unfolds smoothly into place
         gsap.fromTo(
           container,
           {
             opacity: 0,
-            x: -direction * 35,
-            rotateY: -direction * 1.8,
-            scale: 0.985,
-            transformPerspective: 1100
+            y: 8,
           },
           {
             opacity: 1,
-            x: 0,
-            rotateY: 0,
-            scale: 1,
-            duration: 0.34,
-            ease: 'power3.out',
+            y: 0,
+            duration: 0.15,
+            ease: 'power2.out',
             onComplete: () => {
               gsap.set(container, { clearProps: 'all' });
               setIsTransitioning(false);
@@ -167,7 +135,7 @@ const MainContent: React.FC = () => {
     });
   }, [isTransitioning]);
 
-  // Synchronize browser history and hash navigation (Back/Forward buttons)
+  // Sincronización con botones Atrás y Adelante del navegador
   useEffect(() => {
     const handlePopState = () => {
       const target = getViewFromHash();
@@ -192,7 +160,6 @@ const MainContent: React.FC = () => {
             onBackToHome={() => navigateTo('home')}
             onOpenLab={() => navigateTo('lab')}
             onOpenAbout={() => navigateTo('about')}
-            defaultData={DEFAULT_APPLICANT}
           />
         );
       case 'lab':
@@ -224,13 +191,42 @@ const MainContent: React.FC = () => {
   };
 
   return (
-    <div
-      ref={viewContainerRef}
-      className={`min-h-screen w-full transition-opacity ${
-        isTransitioning ? 'pointer-events-none' : ''
-      }`}
-    >
-      {renderCurrentView()}
+    <div className="min-h-screen w-full bg-black text-slate-100 relative flex flex-col selection:bg-blue-600/30 selection:text-white print:bg-white print:text-slate-900 print:min-h-0">
+      {/* Fondo Tecnológico Interactivo FaultyTerminal Persistente */}
+      <div 
+        className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none print:hidden"
+        aria-hidden="true"
+      >
+        <FaultyTerminal
+          tint="#2563eb"
+          scale={1.5}
+          digitSize={1.2}
+          timeScale={prefersReducedMotion ? 0 : 0.5}
+          pause={prefersReducedMotion}
+          scanlineIntensity={0.5}
+          curvature={0.1}
+          noiseAmp={1}
+          brightness={0.7}
+          mouseStrength={0.5}
+          mouseReact={true}
+          pageLoadAnimation={true}
+          dpr={typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1}
+          className="w-full h-full"
+        />
+      </div>
+
+      {/* Dock Global Compartido con GooeyNav y Liquid Glass */}
+      <GlobalDock currentView={currentView} onNavigate={navigateTo} />
+
+      {/* Contenedor Principal con Transición Fluida */}
+      <main
+        ref={viewContainerRef}
+        className={`flex-1 w-full relative z-10 transition-opacity print:m-0 print:p-0 ${
+          isTransitioning ? 'pointer-events-none' : ''
+        }`}
+      >
+        {renderCurrentView()}
+      </main>
     </div>
   );
 };

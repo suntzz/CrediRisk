@@ -1,6 +1,6 @@
 export type ViewMode = 'home' | 'evaluator' | 'lab' | 'about';
 export type ThemeMode = 'light' | 'dark' | 'system';
-export type LabTab = 'summary' | 'metrics' | 'experiments' | 'architecture' | 'methodology';
+export type LabTab = 'summary' | 'metrics' | 'experiments' | 'architecture' | 'methodology' | 'glossary';
 
 export interface ApplicantFormData {
   id_solicitud?: number;
@@ -10,7 +10,7 @@ export interface ApplicantFormData {
   tipo_vivienda: string;
 
   ingreso_mensual: number;
-  obligaciones_mensuales: number;
+  obligaciones_mensuales?: number;
   ingreso_disponible: number;
   monto_solicitado: number;
   plazo_meses: number;
@@ -19,20 +19,84 @@ export interface ApplicantFormData {
   nivel_endeudamiento_pct: number;
 
   score_crediticio: number;
-  numero_creditos_activos: number;
-  saldo_total_creditos: number;
-  numero_cuotas_mora: number;
+  numero_creditos_activos?: number;
+  saldo_total_creditos?: number;
+  numero_cuotas_mora?: number;
   dias_maximo_mora: number;
-  porcentaje_pagos_oportunos: number;
+  porcentaje_pagos_oportunos?: number;
 
-  antiguedad_laboral_anios: number;
+  antiguedad_laboral_anios?: number;
   patrimonio_indice: number;
-  antiguedad_cliente_anios: number;
+  antiguedad_cliente_anios?: number;
   linea_negocio: string;
   tipo_contrato: string;
 
   model_type?: 'ensemble' | 'single';
 }
+
+export interface ApplicantFormState {
+  id_solicitud?: number | '';
+  edad: number | '';
+  estado_civil: string;
+  personas_a_cargo: number | '';
+  tipo_vivienda: string;
+
+  ingreso_mensual: number | '';
+  obligaciones_mensuales?: number | '';
+  ingreso_disponible: number | '';
+  monto_solicitado: number | '';
+  plazo_meses: number | '';
+  cuota_estimada: number | '';
+  tasa_interes_ea: number | '';
+  nivel_endeudamiento_pct: number | '';
+
+  score_crediticio: number | '';
+  numero_creditos_activos?: number | '';
+  saldo_total_creditos?: number | '';
+  numero_cuotas_mora?: number | '';
+  dias_maximo_mora: number | '';
+  porcentaje_pagos_oportunos?: number | '';
+
+  antiguedad_laboral_anios?: number | '';
+  patrimonio_indice: number | '';
+  antiguedad_cliente_anios?: number | '';
+  linea_negocio: string;
+  tipo_contrato: string;
+
+  model_type?: 'ensemble' | 'single';
+}
+
+export const EMPTY_FORM_STATE: ApplicantFormState = {
+  id_solicitud: '',
+  edad: '',
+  estado_civil: '',
+  personas_a_cargo: '',
+  tipo_vivienda: '',
+
+  ingreso_mensual: '',
+  obligaciones_mensuales: '',
+  ingreso_disponible: '',
+  monto_solicitado: '',
+  plazo_meses: '',
+  cuota_estimada: '',
+  tasa_interes_ea: '',
+  nivel_endeudamiento_pct: '',
+
+  score_crediticio: '',
+  numero_creditos_activos: '',
+  saldo_total_creditos: '',
+  numero_cuotas_mora: '',
+  dias_maximo_mora: '',
+  porcentaje_pagos_oportunos: '',
+
+  antiguedad_laboral_anios: '',
+  patrimonio_indice: '',
+  antiguedad_cliente_anios: '',
+  linea_negocio: '',
+  tipo_contrato: '',
+
+  model_type: 'ensemble',
+};
 
 export interface RiskFactor {
   variable: string;

@@ -92,21 +92,83 @@
   }
 }
 
-/* Custom print styles for exporting applicant assessment report */
+/* Estilo elegante y discreto de scrollbar para tema oscuro */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Utilidad para ocultar barras de scroll nativas manteniendo desplazamiento fluido */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+/* Custom print styles for exporting applicant assessment certificate */
 @media print {
-  body {
-    background-color: #ffffff !important;
-    color: #000000 !important;
+  @page {
+    size: letter portrait;
+    margin: 10mm;
   }
-  .no-print {
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  html, body {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    overflow: visible !important;
+    min-height: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  header,
+  nav,
+  canvas,
+  button,
+  [role="navigation"],
+  .no-print,
+  .print\:hidden {
     display: none !important;
   }
+
+  .certificate-print-container {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    box-shadow: none !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
   .print-only {
     display: block !important;
   }
+
   .print-card {
     border: 1px solid #cbd5e1 !important;
     box-shadow: none !important;
     break-inside: avoid;
   }
 }
+
