@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { gsap } from 'gsap';
 import { ThemeProvider } from './context/ThemeContext';
 import { HomeView } from './components/HomeView';
 import { EvaluatorView } from './components/EvaluatorView';
@@ -35,58 +36,202 @@ const DEFAULT_APPLICANT: ApplicantFormData = {
   model_type: 'ensemble',
 };
 
+const getViewFromHash = (): ViewMode => {
+  const hash = window.location.hash.replace(/^#\/?/, '').trim();
+  if (hash === 'evaluator') return 'evaluator';
+  if (hash === 'lab') return 'lab';
+  if (hash === 'about') return 'about';
+  return 'home';
+};
+
 const MainContent: React.FC = () => {
-  const [currentView, setCurrentView] = useState<ViewMode>('home');
+  const [currentView, setCurrentView] = useState<ViewMode>(getViewFromHash);
+  const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
   const [health, setHealth] = useState<HealthStatus | null>(null);
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
+  const viewContainerRef = useRef<HTMLDivElement>(null);
+  const currentViewRef = useRef<ViewMode>(currentView);
+
+  useEffect(() => {
+    currentViewRef.current = currentView;
+  }, [currentView]);
 
   useEffect(() => {
     fetchHealth()
       .then(setHealth)
-      .catch(err => console.warn('Backend aún no disponible:', err.message));
+      .catch(err => console.warn('Backend aun no disponible:', err.message));
 
     fetchMetrics()
       .then(setMetrics)
-      .catch(err => console.warn('Error cargando métricas:', err.message));
+      .catch(err => console.warn('Error cargando metricas:', err.message));
   }, []);
 
-  if (currentView === 'evaluator') {
-    return (
-      <EvaluatorView
-        onBackToHome={() => setCurrentView('home')}
-        onOpenLab={() => setCurrentView('lab')}
-        onOpenAbout={() => setCurrentView('about')}
-        defaultData={DEFAULT_APPLICANT}
-      />
-    );
-  }
+  // Coordinated section navigation transition with GSAP
+  const navigateTo = useCallback((targetView: ViewMode, updateHistory = true) => {
+    if (targetView === currentViewRef.current || isTransitioning) return;
 
-  if (currentView === 'lab') {
-    return (
-      <ModelLabView
-        onBackToHome={() => setCurrentView('home')}
-        onOpenEvaluator={() => setCurrentView('evaluator')}
-        onOpenAbout={() => setCurrentView('about')}
-        metrics={metrics}
-      />
-    );
-  }
+    const fromView = currentViewRef.current;
+    const container = viewContainerRef.current;
+    const prefersReduced = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
-  if (currentView === 'about') {
-    return (
-      <AboutUsView
-        onBackToHome={() => setCurrentView('home')}
-        onOpenEvaluator={() => setCurrentView('evaluator')}
-        onOpenLab={() => setCurrentView('lab')}
-      />
-    );
-  }
+    setIsTransitioning(true);
+
+    if (updateHistory) {
+      const newHash = targetView === 'home' ? '#/' : `#/${targetView}`;
+      if (window.location.hash !== newHash) {
+        window.history.pushState({ view: targetView }, '', newHash);
+      }
+    }
+
+    if (!container || prefersReduced) {
+      // Discrete, accessible cross-fade for reduced motion
+      if (container) {
+        gsap.to(container, {
+          opacity: 0,
+          duration: 0.14,
+          ease: 'power2.inOut',
+          onComplete: () => {
+            setCurrentView(targetView);
+            window.scrollTo({ top: 0, behavior: 'instant' });
+            gsap.fromTo(
+              container,
+              { opacity: 0 },
+              {
+                opacity: 1,
+                duration: 0.18,
+                ease: 'power2.out',
+                onComplete: () => {
+                  gsap.set(container, { clearProps: 'all' });
+                  setIsTransitioning(false);
+                }
+              }
+            );
+          }
+        });
+      } else {
+        setCurrentView(targetView);
+        setIsTransitioning(false);
+      }
+      return;
+    }
+
+    // Directional transition:
+    // Option 1 (evaluator, left card): slide/perspective fold left (-1)
+    // Option 2 (lab, right card): slide/perspective fold right (+1)
+    // Return to home: reverse directional motion
+    let direction = 0;
+    if (fromView === 'home') {
+      direction = targetView === 'evaluator' ? -1 : 1;
+    } else if (targetView === 'home') {
+      direction = fromView === 'evaluator' ? 1 : -1;
+    }
+
+    // 1. Exit animation: current page smoothly slides and tilts subtly
+    gsap.to(container, {
+      opacity: 0,
+      x: direction * 45,
+      rotateY: direction * 2.2,
+      scale: 0.985,
+      duration: 0.26,
+      ease: 'power2.in',
+      transformPerspective: 1100,
+      onComplete: () => {
+        // 2. Switch view in React and scroll to top
+        setCurrentView(targetView);
+        window.scrollTo({ top: 0, behavior: 'instant' });
+
+        // 3. Entrance animation: new section unfolds smoothly into place
+        gsap.fromTo(
+          container,
+          {
+            opacity: 0,
+            x: -direction * 35,
+            rotateY: -direction * 1.8,
+            scale: 0.985,
+            transformPerspective: 1100
+          },
+          {
+            opacity: 1,
+            x: 0,
+            rotateY: 0,
+            scale: 1,
+            duration: 0.34,
+            ease: 'power3.out',
+            onComplete: () => {
+              gsap.set(container, { clearProps: 'all' });
+              setIsTransitioning(false);
+            }
+          }
+        );
+      }
+    });
+  }, [isTransitioning]);
+
+  // Synchronize browser history and hash navigation (Back/Forward buttons)
+  useEffect(() => {
+    const handlePopState = () => {
+      const target = getViewFromHash();
+      if (target !== currentViewRef.current) {
+        navigateTo(target, false);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('hashchange', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('hashchange', handlePopState);
+    };
+  }, [navigateTo]);
+
+  const renderCurrentView = () => {
+    switch (currentView) {
+      case 'evaluator':
+        return (
+          <EvaluatorView
+            onBackToHome={() => navigateTo('home')}
+            onOpenLab={() => navigateTo('lab')}
+            onOpenAbout={() => navigateTo('about')}
+            defaultData={DEFAULT_APPLICANT}
+          />
+        );
+      case 'lab':
+        return (
+          <ModelLabView
+            onBackToHome={() => navigateTo('home')}
+            onOpenEvaluator={() => navigateTo('evaluator')}
+            onOpenAbout={() => navigateTo('about')}
+            metrics={metrics}
+          />
+        );
+      case 'about':
+        return (
+          <AboutUsView
+            onBackToHome={() => navigateTo('home')}
+            onOpenEvaluator={() => navigateTo('evaluator')}
+            onOpenLab={() => navigateTo('lab')}
+          />
+        );
+      case 'home':
+      default:
+        return (
+          <HomeView
+            onSelectView={navigateTo}
+            health={health}
+          />
+        );
+    }
+  };
 
   return (
-    <HomeView
-      onSelectView={setCurrentView}
-      health={health}
-    />
+    <div
+      ref={viewContainerRef}
+      className={`min-h-screen w-full transition-opacity ${
+        isTransitioning ? 'pointer-events-none' : ''
+      }`}
+    >
+      {renderCurrentView()}
+    </div>
   );
 };
 

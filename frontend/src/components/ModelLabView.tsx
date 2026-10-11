@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { 
   ArrowLeft, 
-  FileCheck2, 
   BarChart3, 
   Layers, 
   GitCompare, 
@@ -14,6 +13,8 @@ import {
 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { BrandLogo } from './BrandLogo';
+import { PillNav } from './PillNav';
+import { useTheme } from '../context/ThemeContext';
 import type { SystemMetrics, LabTab } from '../types';
 
 interface ModelLabViewProps {
@@ -29,6 +30,7 @@ export const ModelLabView: React.FC<ModelLabViewProps> = ({
   onOpenAbout,
   metrics,
 }) => {
+  const { isDark } = useTheme();
   const [activeTab, setActiveTab] = useState<LabTab>('summary');
   const [sortField, setSortField] = useState<string>('val_auc');
   const [sortAsc, setSortAsc] = useState<boolean>(false);
@@ -95,22 +97,20 @@ export const ModelLabView: React.FC<ModelLabViewProps> = ({
           </div>
 
           <div className="flex items-center space-x-2 sm:space-x-3">
-            <button
-              type="button"
-              onClick={onOpenEvaluator}
-              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200/80 dark:border-blue-900/60 transition-colors"
-            >
-              <FileCheck2 className="w-3.5 h-3.5" />
-              <span>Abrir Evaluador</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={onOpenAbout}
-              className="hidden sm:inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors"
-            >
-              <span>Sobre nosotros</span>
-            </button>
+            <PillNav
+              items={[
+                { label: 'Inicio', href: '#/', onClick: (e) => { e?.preventDefault(); onBackToHome(); } },
+                { label: 'Evaluador', href: '#/evaluator', onClick: (e) => { e?.preventDefault(); onOpenEvaluator(); } },
+                { label: 'Laboratorio', href: '#/lab' },
+                { label: 'Sobre nosotros', href: '#/about', onClick: (e) => { e?.preventDefault(); onOpenAbout(); } },
+              ]}
+              activeHref="#/lab"
+              baseColor={isDark ? '#0B1220' : '#FFFFFF'}
+              pillColor={isDark ? '#1E293B' : '#F1F5F9'}
+              pillTextColor={isDark ? '#E2E8F0' : '#475569'}
+              hoveredPillTextColor={isDark ? '#FFFFFF' : '#0B1220'}
+              initialLoadAnimation={false}
+            />
 
             <ThemeToggle />
           </div>

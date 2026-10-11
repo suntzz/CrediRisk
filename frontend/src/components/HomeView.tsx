@@ -11,6 +11,8 @@ import { ThemeToggle } from './ThemeToggle';
 import { BrandLogo } from './BrandLogo';
 import { QuantitativeMesh } from './QuantitativeMesh';
 import { TechText } from './TechText';
+import { MagicBento, ParticleCard } from './MagicBento';
+import { PillNav } from './PillNav';
 import { useTheme } from '../context/ThemeContext';
 import type { HealthStatus, ViewMode } from '../types';
 
@@ -44,22 +46,29 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectView, health }) => {
         </div>
 
         {/* Acciones y selector de tema */}
-        <div className="flex items-center space-x-3 sm:space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-3">
           <div 
-            className="hidden md:inline-flex items-center space-x-2 px-2.5 py-1 rounded-md text-[11px] font-mono bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 shadow-2xs"
+            className="hidden xl:inline-flex items-center space-x-2 px-2.5 py-1 rounded-full text-[11px] font-mono bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 shadow-2xs h-9"
             title={isHealthy ? 'Servicio de inferencia activo' : 'Verificando servicio...'}
           >
             <span className={`w-1.5 h-1.5 rounded-full ${isHealthy ? 'bg-emerald-500' : 'bg-amber-500'}`} />
             <span>{isHealthy ? 'API Conectada' : 'API Desconectada'}</span>
           </div>
 
-          <button
-            type="button"
-            onClick={() => onSelectView('about')}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-800/60 transition-colors"
-          >
-            Sobre nosotros
-          </button>
+          <PillNav
+            items={[
+              { label: 'Inicio', href: '#/', onClick: (e) => { e?.preventDefault(); onSelectView('home'); } },
+              { label: 'Evaluador', href: '#/evaluator', onClick: (e) => { e?.preventDefault(); onSelectView('evaluator'); } },
+              { label: 'Laboratorio', href: '#/lab', onClick: (e) => { e?.preventDefault(); onSelectView('lab'); } },
+              { label: 'Sobre nosotros', href: '#/about', onClick: (e) => { e?.preventDefault(); onSelectView('about'); } },
+            ]}
+            activeHref="#/"
+            baseColor={isDark ? '#0B1220' : '#FFFFFF'}
+            pillColor={isDark ? '#1E293B' : '#F1F5F9'}
+            pillTextColor={isDark ? '#E2E8F0' : '#475569'}
+            hoveredPillTextColor={isDark ? '#FFFFFF' : '#0B1220'}
+            initialLoadAnimation={false}
+          />
 
           <ThemeToggle />
         </div>
@@ -104,16 +113,37 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectView, health }) => {
           </p>
         </div>
 
-        {/* Las dos experiencias principales */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-          {/* Opción 1: Evaluador de Crédito (Dominante, 7 columnas) */}
-          <div 
+        {/* Las dos experiencias principales integradas con MagicBento */}
+        <MagicBento
+          enableStars={true}
+          enableSpotlight={true}
+          enableBorderGlow={true}
+          enableTilt={true}
+          enableMagnetism={false}
+          clickEffect={true}
+          particleCount={8}
+          spotlightRadius={340}
+          glowColor={isDark ? '56, 189, 248' : '37, 99, 235'}
+          blendMode={isDark ? 'screen' : 'normal'}
+          className="w-full mb-2"
+          gridClassName="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch"
+        >
+          {/* Tarjeta 1: Abrir evaluador de crédito (7 columnas) */}
+          <ParticleCard
+            className="lg:col-span-7 magic-bento-card magic-bento-card--border-glow group p-7 md:p-8 flex flex-col justify-between"
+            style={{
+              '--glow-color': isDark ? '56, 189, 248' : '37, 99, 235'
+            } as React.CSSProperties}
+            glowColor={isDark ? '56, 189, 248' : '37, 99, 235'}
+            particleCount={8}
+            enableTilt={true}
+            clickEffect={true}
             onClick={() => onSelectView('evaluator')}
-            className="lg:col-span-7 group relative bg-white dark:bg-slate-900 rounded-2xl p-7 md:p-8 border border-slate-200 dark:border-slate-800 shadow-xs hover:border-blue-500/80 dark:hover:border-blue-500/80 transition-all duration-200 flex flex-col justify-between cursor-pointer"
+            aria-label="Abrir evaluador de crédito: Inferencia activa con 23 variables validadas"
           >
             <div>
               <div className="flex items-center justify-between mb-6">
-                <div className="w-11 h-11 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+                <div className="w-11 h-11 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform duration-200">
                   <FileCheck2 className="w-5 h-5" />
                 </div>
                 <span className="font-mono text-[11px] text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-900/50 px-2.5 py-1 rounded-md font-medium">
@@ -121,7 +151,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectView, health }) => {
                 </span>
               </div>
 
-              <h2 className="font-display text-xl sm:text-2xl font-bold text-slate-950 dark:text-white mb-2.5 tracking-tight">
+              <h2 className="font-display text-xl sm:text-2xl font-bold text-slate-950 dark:text-white mb-2.5 tracking-tight group-hover:text-blue-600 dark:group-hover:text-sky-400 transition-colors duration-200">
                 Evaluador de crédito
               </h2>
               
@@ -142,27 +172,34 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectView, health }) => {
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onSelectView('evaluator');
-              }}
-              className="w-full inline-flex items-center justify-center space-x-2 px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold shadow-xs transition-colors active:scale-[0.99]"
-            >
-              <span>Abrir evaluador de crédito</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </div>
+            {/* Acción de la tarjeta */}
+            <div className="pt-2">
+              <div className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-blue-600 group-hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold shadow-xs transition-colors duration-200">
+                <span className="font-sans font-medium">Abrir evaluador de crédito</span>
+                <div className="flex items-center space-x-1.5">
+                  <span className="text-[11px] opacity-80 font-normal hidden sm:inline">Comenzar</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
+                </div>
+              </div>
+            </div>
+          </ParticleCard>
 
-          {/* Opción 2: Laboratorio del Modelo (Analítico, 5 columnas) */}
-          <div 
+          {/* Tarjeta 2: Explorar el laboratorio del modelo (5 columnas) */}
+          <ParticleCard
+            className="lg:col-span-5 magic-bento-card magic-bento-card--border-glow group p-7 md:p-8 flex flex-col justify-between"
+            style={{
+              '--glow-color': isDark ? '148, 163, 184' : '59, 130, 246'
+            } as React.CSSProperties}
+            glowColor={isDark ? '148, 163, 184' : '59, 130, 246'}
+            particleCount={8}
+            enableTilt={true}
+            clickEffect={true}
             onClick={() => onSelectView('lab')}
-            className="lg:col-span-5 group relative bg-white/80 dark:bg-slate-900/80 rounded-2xl p-7 md:p-8 border border-slate-200 dark:border-slate-800 shadow-xs hover:border-slate-400 dark:hover:border-slate-600 transition-all duration-200 flex flex-col justify-between cursor-pointer"
+            aria-label="Explorar el laboratorio del modelo: Evidencia empírica y métricas del ensemble"
           >
             <div>
               <div className="flex items-center justify-between mb-6">
-                <div className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 flex items-center justify-center border border-slate-200 dark:border-slate-700 group-hover:scale-105 transition-transform">
+                <div className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 flex items-center justify-center border border-slate-200 dark:border-slate-700 group-hover:scale-105 transition-transform duration-200">
                   <FlaskConical className="w-5 h-5" />
                 </div>
                 <span className="font-mono text-[11px] text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-md font-medium">
@@ -170,7 +207,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectView, health }) => {
                 </span>
               </div>
 
-              <h2 className="font-display text-xl sm:text-2xl font-bold text-slate-950 dark:text-white mb-2.5 tracking-tight">
+              <h2 className="font-display text-xl sm:text-2xl font-bold text-slate-950 dark:text-white mb-2.5 tracking-tight group-hover:text-blue-600 dark:group-hover:text-sky-400 transition-colors duration-200">
                 Laboratorio del modelo
               </h2>
               
@@ -195,19 +232,18 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectView, health }) => {
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onSelectView('lab');
-              }}
-              className="w-full inline-flex items-center justify-center space-x-2 px-5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white text-xs sm:text-sm font-semibold shadow-xs transition-colors active:scale-[0.99]"
-            >
-              <span>Explorar laboratorio</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </div>
-        </div>
+            {/* Acción de la tarjeta */}
+            <div className="pt-2">
+              <div className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-slate-900 dark:bg-slate-800 group-hover:bg-slate-800 dark:group-hover:bg-slate-700 text-white text-xs sm:text-sm font-semibold border border-slate-800 dark:border-slate-700 shadow-xs transition-colors duration-200">
+                <span className="font-sans font-medium">Explorar el laboratorio del modelo</span>
+                <div className="flex items-center space-x-1.5">
+                  <span className="text-[11px] opacity-70 font-normal hidden sm:inline">Métricas</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
+                </div>
+              </div>
+            </div>
+          </ParticleCard>
+        </MagicBento>
       </main>
 
       {/* Pie de página unificado */}

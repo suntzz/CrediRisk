@@ -5,7 +5,6 @@ import {
   RotateCcw, 
   Sparkles, 
   AlertCircle,
-  FlaskConical,
   CheckCircle2,
   XCircle,
   Calculator,
@@ -15,7 +14,6 @@ import {
   Briefcase,
   FileText,
   Printer,
-  ChevronRight,
   ShieldCheck,
   TrendingUp,
   Info,
@@ -24,6 +22,9 @@ import {
 import { ThemeToggle } from './ThemeToggle';
 import { PrintReport } from './PrintReport';
 import { BrandLogo } from './BrandLogo';
+import { Stepper, Step } from './Stepper';
+import { PillNav } from './PillNav';
+import { useTheme } from '../context/ThemeContext';
 import { predictApplicant, fetchSampleApplicant } from '../services/api';
 import type { ApplicantFormData, PredictionResult } from '../types';
 
@@ -91,6 +92,7 @@ export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
   onOpenAbout,
   defaultData,
 }) => {
+  const { isDark } = useTheme();
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [formData, setFormData] = useState<ApplicantFormData>(defaultData);
   const [prediction, setPrediction] = useState<PredictionResult | null>(null);
@@ -268,22 +270,20 @@ export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
           </div>
 
           <div className="flex items-center space-x-2 sm:space-x-3">
-            <button
-              type="button"
-              onClick={onOpenLab}
-              className="hidden sm:inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors"
-            >
-              <FlaskConical className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-              <span>Laboratorio</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={onOpenAbout}
-              className="hidden sm:inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors"
-            >
-              <span>Sobre nosotros</span>
-            </button>
+            <PillNav
+              items={[
+                { label: 'Inicio', href: '#/', onClick: (e) => { e?.preventDefault(); onBackToHome(); } },
+                { label: 'Evaluador', href: '#/evaluator' },
+                { label: 'Laboratorio', href: '#/lab', onClick: (e) => { e?.preventDefault(); onOpenLab(); } },
+                { label: 'Sobre nosotros', href: '#/about', onClick: (e) => { e?.preventDefault(); onOpenAbout(); } },
+              ]}
+              activeHref="#/evaluator"
+              baseColor={isDark ? '#0B1220' : '#FFFFFF'}
+              pillColor={isDark ? '#1E293B' : '#F1F5F9'}
+              pillTextColor={isDark ? '#E2E8F0' : '#475569'}
+              hoveredPillTextColor={isDark ? '#FFFFFF' : '#0B1220'}
+              initialLoadAnimation={false}
+            />
 
             <ThemeToggle />
           </div>
@@ -595,7 +595,11 @@ export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
                   Etapa {currentStep} de {TOTAL_STEPS}
                 </span>
                 <span className="text-slate-300 dark:text-slate-700">·</span>
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                  {STEP_LABELS[currentStep - 1].title}
+                </span>
+                <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">·</span>
+                <span className="text-xs font-normal text-slate-500 dark:text-slate-400 hidden sm:inline">
                   {STEP_LABELS[currentStep - 1].subtitle}
                 </span>
               </div>
@@ -622,62 +626,29 @@ export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
               </div>
             </div>
 
-            {/* Horizontal Stepper Rail */}
-            <div className="border-b border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-[#0F172A] px-6 py-3 overflow-x-auto no-scrollbar">
-              <div className="flex items-center space-x-2 sm:space-x-4 min-w-max">
-                {STEP_LABELS.map((item) => {
-                  const isActive = item.step === currentStep;
-                  const isCompleted = item.step < currentStep;
-
-                  return (
-                    <button
-                      key={item.step}
-                      type="button"
-                      onClick={() => {
-                        if (item.step < currentStep || validateStep(currentStep)) {
-                          setCurrentStep(item.step);
-                        }
-                      }}
-                      className={`flex items-center space-x-2 py-1 px-2.5 rounded-lg text-xs font-medium transition-colors ${
-                        isActive
-                          ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-semibold'
-                          : isCompleted
-                          ? 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60'
-                          : 'text-slate-400 dark:text-slate-600 cursor-not-allowed'
-                      }`}
-                    >
-                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono font-bold ${
-                        isActive 
-                          ? 'bg-blue-600 text-white' 
-                          : isCompleted 
-                          ? 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200' 
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
-                      }`}>
-                        {item.step}
-                      </span>
-                      <span>{item.title}</span>
-                      {item.step < TOTAL_STEPS && (
-                        <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-700 hidden sm:inline" />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Stepper Progress Bar */}
-            <div className="w-full bg-slate-100 dark:bg-slate-800 h-1">
-              <div 
-                className="bg-blue-600 dark:bg-blue-500 h-1 transition-all duration-300 ease-out"
-                style={{ width: `${(currentStep / TOTAL_STEPS) * 100}%` }}
-              />
-            </div>
-
-            {/* Form Step Contents */}
+            {/* React Bits Visual Stepper Integration */}
             <div className="p-6 sm:p-8">
-              {/* Step 1: Información Personal y Demográfica */}
-              {currentStep === 1 && (
-                <div className="space-y-6 animate-in fade-in duration-150">
+              <Stepper
+                step={currentStep}
+                onStepChange={(targetStep) => {
+                  // Only allow retroceding via indicators; advancing is strictly gated behind "Continuar"
+                  if (targetStep < currentStep) {
+                    setCurrentStep(targetStep);
+                    setErrorMsg(null);
+                  }
+                }}
+                indicator="bars"
+                allowAdvanceViaIndicators={false}
+                linear={true}
+                frame={false}
+                width="100%"
+                theme={isDark ? 'dark' : 'light'}
+                accentColor={isDark ? '#38BDF8' : '#2563EB'}
+                showFooter={false}
+                className="w-full"
+              >
+                <Step title="Datos Personales" description="Perfil e identidad">
+                  <div className="space-y-6 animate-in fade-in duration-150 pt-2">
                   <div className="flex items-center space-x-2 text-xs font-medium text-slate-500 dark:text-slate-400 pb-2 border-b border-slate-100 dark:border-slate-800/60">
                     <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     <span>01. Parámetros personales y situación familiar</span>
@@ -755,11 +726,11 @@ export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
                     </div>
                   </div>
                 </div>
-              )}
+              </Step>
 
               {/* Step 2: Capacidad Financiera y Condiciones del Crédito */}
-              {currentStep === 2 && (
-                <div className="space-y-6 animate-in fade-in duration-150">
+              <Step title="Capacidad Financiera" description="Flujos y condiciones">
+                <div className="space-y-6 animate-in fade-in duration-150 pt-2">
                   <div className="flex items-center space-x-2 text-xs font-medium text-slate-500 dark:text-slate-400 pb-2 border-b border-slate-100 dark:border-slate-800/60">
                     <DollarSign className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     <span>02. Flujos monetarios, obligaciones y estructura del crédito</span>
@@ -925,11 +896,11 @@ export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
                     </div>
                   </div>
                 </div>
-              )}
+              </Step>
 
               {/* Step 3: Historial Crediticio y Comportamiento de Pago */}
-              {currentStep === 3 && (
-                <div className="space-y-6 animate-in fade-in duration-150">
+              <Step title="Historial Crediticio" description="Buró y puntualidad">
+                <div className="space-y-6 animate-in fade-in duration-150 pt-2">
                   <div className="flex items-center space-x-2 text-xs font-medium text-slate-500 dark:text-slate-400 pb-2 border-b border-slate-100 dark:border-slate-800/60">
                     <History className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                     <span>03. Centrales de riesgo, morosidad y saldo acumulado</span>
@@ -1040,11 +1011,11 @@ export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
                     </div>
                   </div>
                 </div>
-              )}
+              </Step>
 
               {/* Step 4: Perfil Laboral y Relación Institucional */}
-              {currentStep === 4 && (
-                <div className="space-y-6 animate-in fade-in duration-150">
+              <Step title="Perfil Laboral" description="Ocupación y contrato">
+                <div className="space-y-6 animate-in fade-in duration-150 pt-2">
                   <div className="flex items-center space-x-2 text-xs font-medium text-slate-500 dark:text-slate-400 pb-2 border-b border-slate-100 dark:border-slate-800/60">
                     <Briefcase className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                     <span>04. Relación institucional, estabilidad laboral y patrimonio</span>
@@ -1138,11 +1109,11 @@ export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
                     </div>
                   </div>
                 </div>
-              )}
+              </Step>
 
               {/* Step 5: Diagnóstico Pre-Inferencia */}
-              {currentStep === 5 && (
-                <div className="space-y-6 animate-in fade-in duration-150">
+              <Step title="Diagnóstico Final" description="Revisión y cálculo">
+                <div className="space-y-6 animate-in fade-in duration-150 pt-2">
                   <div className="flex items-center space-x-2 text-xs font-medium text-slate-500 dark:text-slate-400 pb-2 border-b border-slate-100 dark:border-slate-800/60">
                     <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     <span>05. Dossier de validación previo al cálculo de inferencia</span>
@@ -1199,7 +1170,8 @@ export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
                     </p>
                   </div>
                 </div>
-              )}
+              </Step>
+            </Stepper>
 
               {/* Bottom Nav Buttons */}
               <div className="mt-8 pt-5 border-t border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between gap-3">
