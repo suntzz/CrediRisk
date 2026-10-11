@@ -7,12 +7,7 @@ import {
   ShieldCheck, 
   Activity
 } from 'lucide-react';
-import { ThemeToggle } from './ThemeToggle';
-import { BrandLogo } from './BrandLogo';
 import { TechText } from './TechText';
-import { FaultyTerminal } from './FaultyTerminal';
-import { PillNav } from './PillNav';
-import { useTheme } from '../context/ThemeContext';
 import type { HealthStatus, ViewMode } from '../types';
 
 interface HomeViewProps {
@@ -20,105 +15,13 @@ interface HomeViewProps {
   health: HealthStatus | null;
 }
 
-export const HomeView: React.FC<HomeViewProps> = ({ onSelectView, health }) => {
-  const isHealthy = health?.status === 'healthy';
-  const { isDark } = useTheme();
+export const HomeView: React.FC<HomeViewProps> = ({ onSelectView }) => {
   const [hoveredOption, setHoveredOption] = useState<'evaluator' | 'lab' | null>(null);
 
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    }
-    return false;
-  });
-
-  React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-      const listener = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
-      mediaQuery.addEventListener('change', listener);
-      return () => mediaQuery.removeEventListener('change', listener);
-    }
-  }, []);
-
-  const terminalBackground = React.useMemo(() => (
-    <div 
-      className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none"
-      aria-hidden="true"
-    >
-      <FaultyTerminal
-        tint="#2563eb"
-        scale={1.5}
-        digitSize={1.2}
-        timeScale={prefersReducedMotion ? 0 : 0.5}
-        pause={prefersReducedMotion}
-        scanlineIntensity={0.5}
-        curvature={0.1}
-        noiseAmp={1}
-        brightness={0.7}
-        mouseStrength={0.5}
-        mouseReact={true}
-        pageLoadAnimation={true}
-        dpr={typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1}
-        className="w-full h-full"
-      />
-    </div>
-  ), [prefersReducedMotion]);
-
   return (
-    <div className="min-h-[100dvh] flex flex-col justify-between bg-black text-slate-100 transition-colors relative overflow-hidden">
-      {/* Fondo Tecnologico Interactivo FaultyTerminal (Azul Cobalto como la imagen de referencia) */}
-      {terminalBackground}
-
-      {/* Navegacion Superior Flotante tipo Pill inspirada en la referencia */}
-      <div className="relative z-20 w-full px-6 pt-5">
-        <header className="max-w-4xl mx-auto px-5 sm:px-6 py-2.5 flex items-center justify-between border border-white/10 rounded-full bg-slate-950/70 backdrop-blur-xl shadow-2xl">
-          {/* Identidad de Marca */}
-          <div className="flex items-center space-x-2.5">
-            <BrandLogo size="sm" />
-            <span className="font-display font-extrabold text-base tracking-tight text-white leading-none">
-              CrediRisk
-            </span>
-          </div>
-
-          {/* Acciones y selector de tema */}
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            <div 
-              className="hidden md:inline-flex items-center space-x-2 px-2.5 py-1 rounded-full text-[11px] font-mono bg-slate-900/80 border border-white/10 text-slate-300 shadow-2xs h-8"
-              title={isHealthy ? 'Servicio de inferencia activo' : 'Verificando servicio...'}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${isHealthy ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-              <span>{isHealthy ? 'API Conectada' : 'API Desconectada'}</span>
-            </div>
-
-            <PillNav
-              items={[
-                { label: 'Inicio', href: '#/', onClick: (e) => { e?.preventDefault(); onSelectView('home'); } },
-                { label: 'Evaluador', href: '#/evaluator', onClick: (e) => { e?.preventDefault(); onSelectView('evaluator'); } },
-                { label: 'Laboratorio', href: '#/lab', onClick: (e) => { e?.preventDefault(); onSelectView('lab'); } },
-                { label: 'Sobre nosotros', href: '#/about', onClick: (e) => { e?.preventDefault(); onSelectView('about'); } },
-              ]}
-              activeHref="#/"
-              baseColor={isDark ? '#0B1220' : '#FFFFFF'}
-              pillColor={isDark ? '#1E293B' : '#F1F5F9'}
-              pillTextColor={isDark ? '#E2E8F0' : '#475569'}
-              hoveredPillTextColor={isDark ? '#FFFFFF' : '#0B1220'}
-              initialLoadAnimation={false}
-            />
-
-            <ThemeToggle />
-          </div>
-        </header>
-      </div>
-
+    <div className="w-full flex flex-col justify-between bg-transparent text-slate-100 relative">
       {/* Area Principal: Composicion Centrada, Limpia y Minimalista */}
-      <main className="relative z-10 w-full max-w-4xl mx-auto px-6 py-12 md:py-20 flex-1 flex flex-col items-center justify-center text-center">
-        {/* Badge Pill Tecnologico */}
-        <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full text-xs font-mono bg-blue-950/70 border border-blue-500/30 text-blue-300 backdrop-blur-md mb-6 shadow-xs">
-          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-white text-slate-950">AI</span>
-          <span>Redes Neuronales Profundas · 23 Variables</span>
-        </div>
-
+      <div className="relative z-10 w-full max-w-4xl mx-auto px-6 py-8 md:py-14 flex-1 flex flex-col items-center justify-center text-center">
         {/* Titulo Central con TechText */}
         <div className="flex justify-center items-center w-full my-2">
           <div className="w-[320px] sm:w-[440px] md:w-[500px] h-[75px] sm:h-[95px] md:h-[110px] flex items-center justify-center select-none overflow-visible">
@@ -308,21 +211,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectView, health }) => {
             </div>
           )}
         </div>
-      </main>
-
-      {/* Pie de pagina unificado */}
-      <footer className="relative z-10 w-full max-w-5xl mx-auto px-6 py-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
-        <p className="font-sans">
-          Redes Neuronales Profundas para Evaluacion Crediticia
-        </p>
-        <button
-          type="button"
-          onClick={() => onSelectView('about')}
-          className="text-slate-400 hover:text-white transition-colors cursor-pointer"
-        >
-          Sobre nosotros
-        </button>
-      </footer>
+      </div>
     </div>
   );
 };

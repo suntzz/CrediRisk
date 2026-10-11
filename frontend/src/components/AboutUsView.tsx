@@ -1,16 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { 
-  ArrowLeft, 
   Copy, 
   Check, 
   FileCheck2,
   FlaskConical
 } from 'lucide-react';
-import { ThemeToggle } from './ThemeToggle';
-import { BrandLogo } from './BrandLogo';
-import { PillNav } from './PillNav';
 import { Lanyard } from './Lanyard';
-import { useTheme } from '../context/ThemeContext';
 import { generateBadgeDataUrls, TEAM_MEMBERS } from '../utils/badgeTextures';
 
 interface AboutUsViewProps {
@@ -24,7 +19,6 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
   onOpenEvaluator,
   onOpenLab,
 }) => {
-  const { isDark } = useTheme();
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // Generate crisp 3D badge card textures once
@@ -46,7 +40,7 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
   };
 
   return (
-    <div className="min-h-[100dvh] flex flex-col bg-slate-950 text-slate-100 transition-colors relative overflow-x-hidden selection:bg-blue-500/30 selection:text-white">
+    <div className="w-full flex-1 flex flex-col bg-transparent text-slate-100 relative selection:bg-blue-500/30 selection:text-white">
       {/* Background ambient lighting */}
       <div 
         className="fixed inset-0 pointer-events-none z-0 overflow-hidden" 
@@ -57,55 +51,8 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
         <div className="absolute bottom-10 -right-40 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[130px]" />
       </div>
 
-      {/* Top Floating Glass Navigation */}
-      <div className="relative z-30 w-full px-6 pt-5">
-        <header className="max-w-5xl mx-auto px-5 sm:px-6 py-2.5 flex items-center justify-between border border-white/10 rounded-full bg-slate-950/70 backdrop-blur-xl shadow-2xl">
-          {/* Brand Identity / Breadcrumb */}
-          <div className="flex items-center space-x-3">
-            <button
-              type="button"
-              onClick={onBackToHome}
-              className="inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Inicio</span>
-            </button>
-            <span className="text-white/20">/</span>
-            <div className="flex items-center space-x-2">
-              <BrandLogo size="xs" />
-              <span className="font-display font-bold text-sm tracking-tight text-white">
-                CrediRisk
-              </span>
-              <span className="hidden sm:inline text-xs text-slate-400 font-sans">
-                / Sobre nosotros
-              </span>
-            </div>
-          </div>
-
-          {/* Navigation and Theme selector */}
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            <PillNav
-              items={[
-                { label: 'Inicio', href: '#/', onClick: (e) => { e?.preventDefault(); onBackToHome(); } },
-                { label: 'Evaluador', href: '#/evaluator', onClick: (e) => { e?.preventDefault(); onOpenEvaluator(); } },
-                { label: 'Laboratorio', href: '#/lab', onClick: (e) => { e?.preventDefault(); onOpenLab(); } },
-                { label: 'Sobre nosotros', href: '#/about' },
-              ]}
-              activeHref="#/about"
-              baseColor={isDark ? '#0B1220' : '#FFFFFF'}
-              pillColor={isDark ? '#1E293B' : '#F1F5F9'}
-              pillTextColor={isDark ? '#E2E8F0' : '#475569'}
-              hoveredPillTextColor={isDark ? '#FFFFFF' : '#0B1220'}
-              initialLoadAnimation={false}
-            />
-
-            <ThemeToggle />
-          </div>
-        </header>
-      </div>
-
       {/* Main Content Area */}
-      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 flex flex-col justify-between">
+      <div className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-10 flex flex-col justify-between">
         {/* Title */}
         <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-12">
           <h1 className="text-4xl sm:text-5xl font-display font-extrabold tracking-tight text-white">
@@ -241,7 +188,7 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
             <span>Explorar Laboratorio</span>
           </button>
         </div>
-      </main>
+      </div>
 
       {/* Footer */}
       <footer className="relative z-10 w-full max-w-5xl mx-auto px-6 py-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
