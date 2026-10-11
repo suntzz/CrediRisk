@@ -40,7 +40,7 @@ const getViewFromHash = (): ViewMode => {
   const hash = window.location.hash.replace(/^#\/?/, '').trim();
   if (hash === 'evaluator') return 'evaluator';
   if (hash === 'lab') return 'lab';
-  if (hash === 'about') return 'about';
+  if (hash === 'about' || hash === 'sobre-nosotros') return 'about';
   return 'home';
 };
 
