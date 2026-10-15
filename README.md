@@ -15,6 +15,7 @@ Proyecto desarrollado y evaluado sobre entorno Mac mini M4 (Apple Silicon).
   * [Fase 2: Regularizacion y Ensambles Diversos](#fase-2-regularizacion-y-ensambles-diversos)
   * [Fase 3: Nuevas Activaciones y Evaluacion Multisemilla](#fase-3-nuevas-activaciones-y-evaluacion-multisemilla)
   * [Fase 4: Minimizacion de la Log Loss](#fase-4-minimizacion-de-la-log-loss)
+  * [Entrega 2: Investigacion de tecnicas para reducir la Log Loss](#entrega-2-investigacion-de-tecnicas-para-reducir-la-log-loss)
 * [Tabla Comparativa Historica Consolidada](#tabla-comparativa-historica-consolidada)
 * [Modelo Final Seleccionado](#modelo-final-seleccionado)
   * [Arquitectura del Ensamble](#arquitectura-del-ensamble)
@@ -104,6 +105,13 @@ El desarrollo se estructuro en tres fases secuenciales regidas por un principio 
 * **Referencia no neuronal:** LightGBM alcanza Log Loss 0.58894 en Test.
 * **Evidencia documental:** [reports/phase4_loss_optimization.md](reports/phase4_loss_optimization.md), [reports/experiments_phase4_nn.csv](reports/experiments_phase4_nn.csv) y [reports/phase4_final_test.csv](reports/phase4_final_test.csv).
 
+### Entrega 2: Investigacion de tecnicas para reducir la Log Loss
+
+* **Objetivo:** Evaluar tecnicas de deep learning tabular (representacion numerica, optimizacion, arquitectura, calibracion, ensamble y destilacion) contra el mejor modelo de Fase 4, con una regla de seleccion pre-registrada.
+* **Resultados en Validacion:** 15 configuraciones (96 redes). Ninguna tecnica aislada mejoro la referencia: PLE con 12, 24 o tramos-arbol, PLR, LayerNorm, ResNet, EMA y AdamW empeoraron entre +0.0006 y +0.0030. La calibracion post hoc y los pesos de ensamble no mejoraron con ajuste cruzado. El ensamble se satura con ~6-10 redes.
+* **Modelo 100% neuronal (`Ensemble_PLE_Puro_E2`, 40 redes, sin LightGBM):** Log Loss Val 0.58479, Test **0.59268** (−0.00363 frente al baseline, IC 95% [−0.00609, −0.00124]). Es equivalente a `Ensemble_PLE_Fase4` (Δ Test −0.00025, IC 95% [−0.00074, +0.00024]), lo que muestra que la destilacion no es necesaria.
+* **Evidencia documental:** [reports/entrega2_investigacion.md](reports/entrega2_investigacion.md), [reports/entrega2_resultados.csv](reports/entrega2_resultados.csv), [reports/entrega2_final_test.csv](reports/entrega2_final_test.csv) y [reports/entrega2_preregistro.md](reports/entrega2_preregistro.md).
+
 ---
 
 ## Tabla Comparativa Historica Consolidada
@@ -122,6 +130,7 @@ La siguiente tabla resume las configuraciones evaluadas a lo largo del proyecto,
 | **Fase 3: Ensamble 70/15/15** | 11 | 0.75353 | No evaluado | No evaluado | No evaluado | No evaluado | No evaluado | No evaluado |
 | **MODELO FINAL DEFINITIVO (Test)** | **3** | **0.75382** | **0.74482** | **0.73512** | **0.5963** | **0.2050** | **67.48%** | **0.6715** |
 | **Fase 4: `Ensemble_PLE_Fase4`** (min. Log Loss) | 10 | 0.75816 | 0.74842 | 0.73996 | **0.5929** | 0.2036 | 68.22% | 0.6806 |
+| **Entrega 2: `Ensemble_PLE_Puro_E2`** (100% red, sin LightGBM) | 40 | 0.75773 | 0.74875 | 0.73969 | **0.5927** | 0.2035 | 68.41% | 0.6831 |
 | *Referencia no neuronal: LightGBM* | — | 0.76172 | 0.75315 | 0.74557 | 0.5889 | 0.2019 | 68.76% | 0.6898 |
 
 *Nota sobre significancia estadistica:* Las diferencias numericas observadas (+0.00239 en Test AUC entre el Baseline y el Ensamble Final) son de magnitud modesta. En este proyecto no se ejecutaron pruebas formales de hipotesis (como el test de DeLong o remuestreo bootstrap), por lo que no es metodologicamente valido asegurar que la diferencia sea estadisticamente significativa.
