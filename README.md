@@ -14,6 +14,7 @@ Proyecto desarrollado y evaluado sobre entorno Mac mini M4 (Apple Silicon).
   * [Fase 1: Linea Base y Exploracion Inicial](#fase-1-linea-base-y-exploracion-inicial)
   * [Fase 2: Regularizacion y Ensambles Diversos](#fase-2-regularizacion-y-ensambles-diversos)
   * [Fase 3: Nuevas Activaciones y Evaluacion Multisemilla](#fase-3-nuevas-activaciones-y-evaluacion-multisemilla)
+  * [Fase 4: Minimizacion de la Log Loss](#fase-4-minimizacion-de-la-log-loss)
 * [Tabla Comparativa Historica Consolidada](#tabla-comparativa-historica-consolidada)
 * [Modelo Final Seleccionado](#modelo-final-seleccionado)
   * [Arquitectura del Ensamble](#arquitectura-del-ensamble)
@@ -94,6 +95,15 @@ El desarrollo se estructuro en tres fases secuenciales regidas por un principio 
   * Por razones de parsimonia operativa (3 redes frente a 11 redes) y consistencia historica, se determino mantener congelado el `Ensemble_Top3_Diverso` como modelo final definitivo.
 * **Evidencia documental:** [reports/experiments_phase3.csv](reports/experiments_phase3.csv), [reports/multiseed_phase3_summary.csv](reports/multiseed_phase3_summary.csv) y [reports/ensemble_validation_phase3.csv](reports/ensemble_validation_phase3.csv).
 
+### Fase 4: Minimizacion de la Log Loss
+
+* **Objetivo:** Reducir la perdida de entropia cruzada manteniendo el protocolo (seleccion en Validacion, Test evaluado una sola vez).
+* **Diagnostico:** Un LightGBM aditivo (sin interacciones) iguala a la mejor red; la brecha de la red original se debia a formas no lineales univariadas (p. ej. `tasa_interes_ea` es no monotona) y, en menor medida, a interacciones de a pares difusas.
+* **Cambios:** parada temprana sobre la Log Loss real (weight decay AdamW en lugar de L2 en la perdida), codificacion **PLE** de 16 tramos por variable numerica (268 entradas) y destilacion desde LightGBM *out-of-fold* para parte del ensamble.
+* **Resultado en Test (`Ensemble_PLE_Fase4`, 10 redes):** Log Loss **0.59293** (−0.00338 frente al baseline, IC 95% bootstrap [−0.00593, −0.00085]), AUC 0.74842, Brier 0.20362, Accuracy 68.22%.
+* **Referencia no neuronal:** LightGBM alcanza Log Loss 0.58894 en Test.
+* **Evidencia documental:** [reports/phase4_loss_optimization.md](reports/phase4_loss_optimization.md), [reports/experiments_phase4_nn.csv](reports/experiments_phase4_nn.csv) y [reports/phase4_final_test.csv](reports/phase4_final_test.csv).
+
 ---
 
 ## Tabla Comparativa Historica Consolidada
@@ -111,6 +121,8 @@ La siguiente tabla resume las configuraciones evaluadas a lo largo del proyecto,
 | **Fase 3: Ensamble 60/20/20** | 11 | 0.75359 | No evaluado | No evaluado | No evaluado | No evaluado | No evaluado | No evaluado |
 | **Fase 3: Ensamble 70/15/15** | 11 | 0.75353 | No evaluado | No evaluado | No evaluado | No evaluado | No evaluado | No evaluado |
 | **MODELO FINAL DEFINITIVO (Test)** | **3** | **0.75382** | **0.74482** | **0.73512** | **0.5963** | **0.2050** | **67.48%** | **0.6715** |
+| **Fase 4: `Ensemble_PLE_Fase4`** (min. Log Loss) | 10 | 0.75816 | 0.74842 | 0.73996 | **0.5929** | 0.2036 | 68.22% | 0.6806 |
+| *Referencia no neuronal: LightGBM* | — | 0.76172 | 0.75315 | 0.74557 | 0.5889 | 0.2019 | 68.76% | 0.6898 |
 
 *Nota sobre significancia estadistica:* Las diferencias numericas observadas (+0.00239 en Test AUC entre el Baseline y el Ensamble Final) son de magnitud modesta. En este proyecto no se ejecutaron pruebas formales de hipotesis (como el test de DeLong o remuestreo bootstrap), por lo que no es metodologicamente valido asegurar que la diferencia sea estadisticamente significativa.
 

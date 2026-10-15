@@ -1,0 +1,56 @@
+{
+  "ensemble_name": "Ensemble_PLE_Fase4",
+  "configs": {
+    "A3_ple16_relu": {
+      "enc": "ple",
+      "n_bins": 16,
+      "hidden": [
+        64,
+        32,
+        16
+      ],
+      "act": "relu",
+      "dropout": 0.15,
+      "lr": 0.0005,
+      "batch": 128
+    },
+    "E3_ple16_elu_d30_distill05": {
+      "enc": "ple",
+      "n_bins": 16,
+      "distill": 0.5,
+      "hidden": [
+        64,
+        32,
+        16
+      ],
+      "act": "elu",
+      "dropout": 0.3,
+      "lr": 0.0005,
+      "batch": 512,
+      "wd": 0.03,
+      "drop_last": true
+    }
+  },
+  "seeds": [
+    42,
+    1,
+    7,
+    21,
+    2026
+  ],
+  "models": [
+    "final_models/A3_ple16_relu_s42.keras",
+    "final_models/A3_ple16_relu_s1.keras",
+    "final_models/A3_ple16_relu_s7.keras",
+    "final_models/A3_ple16_relu_s21.keras",
+    "final_models/A3_ple16_relu_s2026.keras",
+    "final_models/E3_ple16_elu_d30_distill05_s42.keras",
+    "final_models/E3_ple16_elu_d30_distill05_s1.keras",
+    "final_models/E3_ple16_elu_d30_distill05_s7.keras",
+    "final_models/E3_ple16_elu_d30_distill05_s21.keras",
+    "final_models/E3_ple16_elu_d30_distill05_s2026.keras"
+  ],
+  "encoder": "encoder_phase4.joblib",
+  "aggregation": "media aritmetica de probabilidades",
+  "threshold": 0.5
+}
