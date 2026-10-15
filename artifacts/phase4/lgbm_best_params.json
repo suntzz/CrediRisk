@@ -1,0 +1,10 @@
+{
+  "cv_logloss": 0.5813966888068778,
+  "num_leaves": 6,
+  "min_child_samples": 22,
+  "feature_fraction": 0.5566095437538543,
+  "bagging_fraction": 0.7423370308332309,
+  "lambda_l2": 29.03933159067726,
+  "min_split_gain": 0.25484037074565624,
+  "cat_smooth": 4.188630736527126
+}

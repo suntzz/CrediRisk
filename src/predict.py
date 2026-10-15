@@ -17,7 +17,15 @@ import config as C
 from preprocess import Preprocessor  # noqa: F401 (necesario para deserializar joblib)
 
 
-def load_model_and_preprocessor(model_path=None, use_ensemble=False):
+def load_model_and_preprocessor(model_path=None, use_ensemble=False, phase4=False):
+    if phase4:
+        # Ensemble_PLE_Fase4: codificador PLE propio + 10 redes (ver reports/phase4_loss_optimization.md)
+        import phase4_common  # noqa: F401 (necesario para deserializar el codificador)
+        p4 = C.ARTIFACTS / "phase4"
+        manifest = json.loads((p4 / "final_manifest.json").read_text(encoding="utf-8"))
+        enc = joblib.load(p4 / manifest["encoder"])
+        return enc, [keras.models.load_model(p4 / f) for f in manifest["models"]]
+
     pre = joblib.load(C.ARTIFACTS / "preprocessor.joblib")
 
     if use_ensemble:
@@ -62,9 +70,11 @@ if __name__ == "__main__":
     a.add_argument("--csv", help="CSV con varios solicitantes")
     a.add_argument("--model", default=None, help="Ruta al modelo .keras a utilizar")
     a.add_argument("--ensemble", action="store_true", help="Utilizar el mejor ensamble neuronal en lugar de un modelo único")
+    a.add_argument("--phase4", action="store_true", help="Utilizar el ensamble de Fase 4 (minima Log Loss)")
     args = a.parse_args()
 
-    pre, model_obj = load_model_and_preprocessor(args.model, args.ensemble)
+    pre, model_obj = load_model_and_preprocessor(args.model, args.ensemble, args.phase4)
+    args.ensemble = args.ensemble or args.phase4
 
     if args.json:
         df = pd.DataFrame([json.loads(open(args.json).read())])
