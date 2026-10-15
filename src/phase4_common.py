@@ -69,10 +69,15 @@ class Encoder:
     - "qt":   numericas -> QuantileTransformer(normal); flags y one-hot igual.
     - "ple":  Piecewise Linear Encoding (Gorishniy et al., 2022) de cada numerica en
               n_bins tramos por cuantiles + la numerica estandarizada original.
+    - "ple_tree": PLE con tramos guiados por el target (Entrega 2): por cada variable, un arbol
+              de decision de una sola variable ajustado en Train; sus hojas son los tramos.
+    nan_zero (Entrega 2): el bloque PLE de una fila con dato ausente queda en 0 en lugar de
+              codificar la mediana imputada.
     """
 
-    def __init__(self, kind="base", n_bins=16):
+    def __init__(self, kind="base", n_bins=16, nan_zero=False, tree_min_leaf=500):
         self.kind, self.n_bins = kind, n_bins
+        self.nan_zero, self.tree_min_leaf = nan_zero, tree_min_leaf
 
     def fit(self, df_tr):
         self.pre = Preprocessor().fit(df_tr)
@@ -89,6 +94,17 @@ class Encoder:
             for j in range(num.shape[1]):
                 e = np.unique(np.quantile(num[:, j], np.linspace(0, 1, self.n_bins + 1)))
                 self.edges.append(e)
+        if self.kind == "ple_tree":
+            from sklearn.tree import DecisionTreeClassifier
+
+            y = df_tr[C.TARGET].to_numpy()
+            self.edges = []
+            for j in range(num.shape[1]):
+                t = DecisionTreeClassifier(
+                    max_leaf_nodes=self.n_bins, min_samples_leaf=self.tree_min_leaf, random_state=0
+                ).fit(num[:, [j]], y)
+                thr = t.tree_.threshold[t.tree_.feature >= 0]
+                self.edges.append(np.unique(np.r_[num[:, j].min(), thr, num[:, j].max()]))
         return self
 
     def _num(self, clean):
@@ -112,7 +128,8 @@ class Encoder:
             nb = len(self.base)
             Xq = self.qt.transform(num).astype("float32")
             return np.hstack([Xq, X0[:, nb:]]).astype("float32")
-        if self.kind == "ple":
+        if self.kind in ("ple", "ple_tree"):
+            miss = clean[self.base].isna().to_numpy()
             blocks = [X0]
             self.slices, start = [], X0.shape[1]  # columnas PLE de cada variable
             for j, e in enumerate(self.edges):
@@ -120,6 +137,8 @@ class Encoder:
                     continue
                 lo, hi = e[:-1], e[1:]
                 enc = np.clip((num[:, [j]] - lo) / (hi - lo), 0.0, 1.0)
+                if getattr(self, "nan_zero", False):  # codificadores de Fase 4 no tienen el atributo
+                    enc[miss[:, j]] = 0.0
                 blocks.append(enc)
                 self.slices.append((start, start + enc.shape[1]))
                 start += enc.shape[1]
@@ -130,16 +149,98 @@ class Encoder:
 _CACHE = {}
 
 
-def get_data(kind="base", n_bins=16):
-    key = (kind, n_bins)
+def get_data(kind="base", n_bins=16, **enc_kw):
+    key = (kind, n_bins, tuple(sorted(enc_kw.items())))
     if key not in _CACHE:
         df, y, tr, va, te = load_raw()
-        enc = Encoder(kind, n_bins).fit(df.iloc[tr])
+        enc = Encoder(kind, n_bins, **enc_kw).fit(df.iloc[tr])
         X = enc.transform(df)
         _CACHE[key] = dict(
             X_tr=X[tr], y_tr=y[tr], X_va=X[va], y_va=y[va], X_te=X[te], y_te=y[te], enc=enc
         )
     return _CACHE[key]
+
+
+# ---------------------------------------------------------------------------
+# Componentes de Entrega 2: embedding periodico (PLR) y EMA de pesos
+# ---------------------------------------------------------------------------
+def _keras_parts():
+    """Define (una vez) las clases Keras; se crean tarde para no cargar TF al importar el modulo."""
+    if "PeriodicEmbedding" in globals():
+        return
+    import keras
+    from keras import ops
+
+    @keras.saving.register_keras_serializable(package="credirisk")
+    class PeriodicEmbedding(keras.layers.Layer):
+        """PLR (Gorishniy et al., 2022): ReLU(Linear_j([sin(2*pi*c_j*x_j), cos(2*pi*c_j*x_j)])).
+        Frecuencias c_j entrenables ~ N(0, sigma); una capa lineal propia por variable."""
+
+        def __init__(self, k=16, sigma=0.1, d=16, **kw):
+            super().__init__(**kw)
+            self.k, self.sigma, self.d = k, sigma, d
+
+        def build(self, shape):
+            n = shape[-1]
+            self.c = self.add_weight(shape=(n, self.k), name="freq",
+                                     initializer=keras.initializers.RandomNormal(0.0, self.sigma))
+            self.w = self.add_weight(shape=(n, 2 * self.k, self.d), name="w",
+                                     initializer="glorot_uniform")
+            self.b = self.add_weight(shape=(n, self.d), name="b", initializer="zeros")
+
+        def call(self, x):
+            v = 2 * np.pi * self.c[None] * x[..., None]  # (b, n, k)
+            z = ops.concatenate([ops.sin(v), ops.cos(v)], axis=-1)  # (b, n, 2k)
+            e = ops.relu(ops.einsum("bnk,nkd->bnd", z, self.w) + self.b)
+            return ops.reshape(e, (-1, e.shape[1] * self.d))
+
+        def get_config(self):
+            return {**super().get_config(), "k": self.k, "sigma": self.sigma, "d": self.d}
+
+    class WeightEMA(keras.callbacks.Callback):
+        """Media movil exponencial de los pesos (Polyak averaging; cf. SWA, Izmailov et al. 2018).
+        Se actualiza cada `steps_per_execution` pasos; al final de cada epoca evalua la Log Loss de
+        Validacion con los pesos promediados (`val_ema_loss`) y al terminar deja los mejores."""
+
+        def __init__(self, X_va, y_va, beta):
+            super().__init__()
+            self.X_va, self.y_va, self.beta = X_va, y_va, beta
+
+        def on_train_begin(self, logs=None):
+            self.ema = [w.copy() for w in self.model.get_weights()]
+            self.best, self.best_w, self.best_epoch = np.inf, None, 0
+
+        def on_train_batch_end(self, batch, logs=None):
+            b = self.beta
+            self.ema = [b * e + (1 - b) * w for e, w in zip(self.ema, self.model.get_weights())]
+
+        def on_epoch_end(self, epoch, logs=None):
+            cur = self.model.get_weights()
+            self.model.set_weights(self.ema)
+            p = self.model.predict(self.X_va, batch_size=8192, verbose=0).ravel()
+            ll = log_loss(self.y_va, np.clip(p, 1e-7, 1 - 1e-7))
+            logs["val_ema_loss"] = ll
+            if ll < self.best:
+                self.best, self.best_w, self.best_epoch = ll, [w.copy() for w in self.ema], epoch + 1
+            self.model.set_weights(cur)
+
+        def on_train_end(self, logs=None):
+            self.model.set_weights(self.best_w)
+
+    globals().update(PeriodicEmbedding=PeriodicEmbedding, WeightEMA=WeightEMA)
+
+
+def paired_bootstrap(y, p_new, p_ref, n_boot=2000, seed=2026):
+    """Diferencia media de Log Loss por observacion (nuevo - referencia) con IC 95% por bootstrap
+    pareado (mismas filas remuestreadas para ambos modelos). Devuelve (media, lo, hi, P(d>=0))."""
+    def ll(p):
+        p = np.clip(p, 1e-7, 1 - 1e-7)
+        return -(y * np.log(p) + (1 - y) * np.log(1 - p))
+
+    d = ll(p_new) - ll(p_ref)
+    idx = np.random.default_rng(seed).integers(0, len(y), size=(n_boot, len(y)))
+    b = d[idx].mean(1)
+    return d.mean(), np.percentile(b, 2.5), np.percentile(b, 97.5), float((b >= 0).mean())
 
 
 # ---------------------------------------------------------------------------
@@ -162,8 +263,14 @@ def train_mlp(data, cfg, seed, verbose=0):
     drop = cfg.get("dropout", 0.15)
     n_in = data["X_tr"].shape[1]
 
+    _keras_parts()
     inp = keras.Input(shape=(n_in,))
     x = inp
+    if cfg.get("periodic"):
+        # PLR sobre las numericas base (primeras columnas de X0); resto (flags, one-hot, PLE) igual
+        n_num = len(data["enc"].base)
+        emb = PeriodicEmbedding(**cfg["periodic"])(inp[:, :n_num])
+        x = keras.layers.Concatenate()([emb, inp[:, n_num:]])
     if cfg.get("emb_dim"):
         # Embedding no lineal por variable: PLE_j -> Dense(emb_dim, relu) (MLP-PLE de Gorishniy)
         n0 = data["enc"].slices[0][0]
@@ -174,10 +281,26 @@ def train_mlp(data, cfg, seed, verbose=0):
         x = keras.layers.Concatenate()(parts)
     if cfg.get("input_dropout", 0) > 0:
         x = keras.layers.Dropout(cfg["input_dropout"])(x)
+    if cfg.get("resnet"):
+        # ResNet tabular (Gorishniy et al., 2021) con LayerNorm en lugar de BatchNorm
+        # (BatchNorm degrado el AUC en la Fase 1 de este proyecto).
+        r = cfg["resnet"]
+        x = keras.layers.Dense(r["d"])(x)
+        for _ in range(r["blocks"]):
+            z = keras.layers.LayerNormalization()(x)
+            z = keras.layers.Dense(r["d_hidden"], activation=act, kernel_initializer="he_normal")(z)
+            z = keras.layers.Dropout(drop)(z)
+            z = keras.layers.Dense(r["d"])(z)
+            z = keras.layers.Dropout(r.get("drop_res", 0.0))(z)
+            x = keras.layers.Add()([x, z])
+        x = keras.layers.Activation(act)(keras.layers.LayerNormalization()(x))
+        hidden = ()
     for i, u in enumerate(hidden):
         x = keras.layers.Dense(u, kernel_initializer="he_normal")(x)
         if cfg.get("batchnorm"):
             x = keras.layers.BatchNormalization()(x)
+        if cfg.get("layernorm"):
+            x = keras.layers.LayerNormalization()(x)
         x = keras.layers.Activation(act)(x)
         if drop > 0 and (i < len(hidden) - 1 or cfg.get("drop_last", False)):
             x = keras.layers.Dropout(drop)(x)
@@ -203,12 +326,14 @@ def train_mlp(data, cfg, seed, verbose=0):
     # steps_per_execution agrupa pasos en una sola llamada al grafo (mismo algoritmo, menos overhead)
     model.compile(optimizer=opt, loss=keras.losses.BinaryCrossentropy(), steps_per_execution=64)
 
-    cbs = [
+    ema = WeightEMA(data["X_va"], data["y_va"], cfg["ema"]) if cfg.get("ema") else None
+    mon = "val_ema_loss" if ema else "val_loss"
+    cbs = ([ema] if ema else []) + [  # EMA primero: escribe val_ema_loss antes de que lo lea ES
         keras.callbacks.EarlyStopping(
-            monitor="val_loss", patience=cfg.get("patience", 15), restore_best_weights=True
+            monitor=mon, mode="min", patience=cfg.get("patience", 15), restore_best_weights=not ema
         ),
         keras.callbacks.ReduceLROnPlateau(
-            monitor="val_loss", factor=0.5, patience=cfg.get("rlr_patience", 5), min_lr=1e-6
+            monitor=mon, mode="min", factor=0.5, patience=cfg.get("rlr_patience", 5), min_lr=1e-6
         ),
     ]
     y_fit = data["y_tr"]
@@ -225,7 +350,7 @@ def train_mlp(data, cfg, seed, verbose=0):
         callbacks=cbs,
         verbose=verbose,
     )
-    best_ep = int(np.argmin(h.history["val_loss"])) + 1
+    best_ep = ema.best_epoch if ema else int(np.argmin(h.history["val_loss"])) + 1
     pv = model.predict(data["X_va"], batch_size=8192, verbose=0).ravel()
     pt = model.predict(data["X_te"], batch_size=8192, verbose=0).ravel()
     return pv, pt, best_ep, model
