@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 
 import './Lanyard.css';
@@ -701,6 +701,26 @@ const stepSimulation = (sim, dt, physics, time) => {
   sim.calm = energy < 2e-4 ? sim.calm + dt : 0;
 };
 
+// Cola de inicialización: crea como máximo un renderer WebGL por fotograma. Varias tarjetas montadas a la vez
+// (Sobre nosotros) bloqueaban el hilo principal ~240 ms en un solo fotograma y congelaban la transición de entrada.
+const initQueue = [];
+let initFrame = 0;
+
+const runNextInit = () => {
+  initFrame = 0;
+  initQueue.shift()?.();
+  if (initQueue.length) initFrame = requestAnimationFrame(runNextInit);
+};
+
+const scheduleInit = task => {
+  initQueue.push(task);
+  if (!initFrame) initFrame = requestAnimationFrame(runNextInit);
+  return () => {
+    const index = initQueue.indexOf(task);
+    if (index >= 0) initQueue.splice(index, 1);
+  };
+};
+
 const Lanyard = ({
   frontImage,
   backImage,
@@ -733,6 +753,7 @@ const Lanyard = ({
   const containerRef = useRef(null);
   const settingsRef = useRef(null);
   const applyRef = useRef(null);
+  const [ready, setReady] = useState(false);
 
   const resolvedLength = bandLength !== undefined ? bandLength : strapLength;
   const resolvedWidth = bandWidth !== undefined ? bandWidth : strapWidth;
@@ -766,9 +787,11 @@ const Lanyard = ({
     applyRef.current?.();
   });
 
+  useEffect(() => scheduleInit(() => setReady(true)), []);
+
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return undefined;
+    if (!container || !ready) return undefined;
 
     let renderer;
     try {
@@ -1295,9 +1318,11 @@ const Lanyard = ({
       [frontTexture, backTexture, strapTexture, grain, weave].forEach(texture => texture.dispose());
       environment.dispose();
       renderer.dispose();
+      // Libera el contexto WebGL de inmediato; sin esto se acumulan y el navegador descarta los más antiguos
+      renderer.forceContextLoss();
       if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
     };
-  }, []);
+  }, [ready]);
 
   return <div ref={containerRef} className={`lanyard ${className}`.trim()} style={style} />;
 };

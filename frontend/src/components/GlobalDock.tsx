@@ -18,7 +18,17 @@ export const GlobalDock: React.FC<GlobalDockProps> = ({ currentView, onNavigate 
       { label: 'Inicio', href: '#/', view: 'home' },
       { label: 'Evaluador', href: '#/evaluator', view: 'evaluator' },
       { label: 'Laboratorio', href: '#/lab', view: 'lab' },
-      { label: 'Sobre nosotros', href: '#/about', view: 'about' },
+      {
+        // En pantallas muy estrechas la etiqueta completa no cabe en el dock
+        label: (
+          <>
+            <span className="min-[400px]:hidden">Nosotros</span>
+            <span className="hidden min-[400px]:inline">Sobre nosotros</span>
+          </>
+        ),
+        href: '#/about',
+        view: 'about',
+      },
     ],
     []
   );
@@ -29,8 +39,8 @@ export const GlobalDock: React.FC<GlobalDockProps> = ({ currentView, onNavigate 
   }, [destinations, currentView]);
 
   return (
-    <header className="sticky top-0 z-40 w-full px-4 sm:px-6 pt-3 sm:pt-4 pb-2 pointer-events-none select-none print:hidden">
-      <div className="max-w-5xl mx-auto flex items-center justify-between gap-3 sm:gap-6 px-4 sm:px-6 py-2 rounded-full pointer-events-auto border border-white/10 bg-slate-950/70 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.65),inset_0_1px_1px_rgba(255,255,255,0.18),inset_0_-1px_1px_rgba(0,0,0,0.4)] transition-all">
+    <header className="sticky top-0 z-40 w-full px-3 sm:px-6 pt-3 sm:pt-4 pb-2 overflow-x-clip pointer-events-none select-none print:hidden">
+      <div className="max-w-5xl mx-auto flex items-center justify-between gap-2 sm:gap-6 px-2 sm:px-6 py-2 rounded-full pointer-events-auto border border-white/10 bg-slate-950/70 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.65),inset_0_1px_1px_rgba(255,255,255,0.18),inset_0_-1px_1px_rgba(0,0,0,0.4)] transition-all">
         {/* Lado izquierdo: Identidad de Marca CrediRisk */}
         <button
           type="button"
@@ -39,7 +49,7 @@ export const GlobalDock: React.FC<GlobalDockProps> = ({ currentView, onNavigate 
           title="CrediRisk - Inicio"
         >
           <BrandLogo size="sm" className="shrink-0" />
-          <span className="font-display font-extrabold text-base tracking-tight text-white leading-none -ml-1.5">
+          <span className="hidden sm:inline font-display font-extrabold text-base tracking-tight text-white leading-none -ml-1.5">
             rediRisk
           </span>
         </button>
@@ -59,6 +69,7 @@ export const GlobalDock: React.FC<GlobalDockProps> = ({ currentView, onNavigate 
             gooeyness={0.5}
             wobble={0.5}
             hoverEffect
+            className="global-dock-nav"
             onChange={(index) => {
               const target = destinations[index];
               if (target && target.view !== currentView) {

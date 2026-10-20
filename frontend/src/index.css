@@ -37,6 +37,8 @@
   html {
     color-scheme: light;
     scroll-behavior: smooth;
+    /* Reserva el carril del scrollbar para que el contenido centrado no se desplace entre vistas o al abrir modales */
+    scrollbar-gutter: stable;
   }
   html.dark {
     color-scheme: dark;
@@ -80,6 +82,17 @@
   background-image: 
     linear-gradient(to right, rgba(56, 189, 248, 0.05) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(56, 189, 248, 0.05) 1px, transparent 1px);
+}
+
+/* Dock global compacto en móvil: evita que el GooeyNav desborde el ancho de pantalla */
+@media (max-width: 639px) {
+  .gooey-nav.global-dock-nav {
+    --gn-pad: 4px;
+    --gn-gap: 0px;
+    --gn-font: 12px;
+    --gn-x: 9px;
+    --gn-y: 7px;
+  }
 }
 
 /* Reduced motion support */

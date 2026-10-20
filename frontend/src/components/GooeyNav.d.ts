@@ -1,7 +1,7 @@
 import React from 'react';
 
 export interface GooeyNavItem {
-  label?: string;
+  label?: React.ReactNode;
   href?: string;
   icon?: React.ReactNode;
   view?: string;

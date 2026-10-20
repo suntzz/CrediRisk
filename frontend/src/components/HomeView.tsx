@@ -17,6 +17,13 @@ interface HomeViewProps {
 
 export const HomeView: React.FC<HomeViewProps> = ({ onSelectView }) => {
   const [hoveredOption, setHoveredOption] = useState<'evaluator' | 'lab' | null>(null);
+  // Contenido mostrado en el panel: se conserva mientras se cierra para que el colapso sea visible y no un corte
+  const [panelOption, setPanelOption] = useState<'evaluator' | 'lab' | null>(null);
+
+  const showOption = (option: 'evaluator' | 'lab') => {
+    setHoveredOption(option);
+    setPanelOption(option);
+  };
 
   return (
     <div className="w-full flex flex-col justify-between bg-transparent text-slate-100 relative">
@@ -58,7 +65,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectView }) => {
           <button
             type="button"
             onClick={() => onSelectView('evaluator')}
-            onMouseEnter={() => setHoveredOption('evaluator')}
+            onMouseEnter={() => showOption('evaluator')}
             onMouseLeave={() => setHoveredOption(null)}
             className={`relative group px-7 py-3.5 rounded-full text-sm font-semibold transition-all duration-300 flex items-center space-x-2.5 cursor-pointer ${
               hoveredOption === 'evaluator'
@@ -75,7 +82,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectView }) => {
           <button
             type="button"
             onClick={() => onSelectView('lab')}
-            onMouseEnter={() => setHoveredOption('lab')}
+            onMouseEnter={() => showOption('lab')}
             onMouseLeave={() => setHoveredOption(null)}
             className={`relative group px-7 py-3.5 rounded-full text-sm font-semibold transition-all duration-300 flex items-center space-x-2.5 backdrop-blur-xl border cursor-pointer ${
               hoveredOption === 'lab'
@@ -101,10 +108,10 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectView }) => {
           }}
           onMouseLeave={() => setHoveredOption(null)}
         >
-          {hoveredOption === 'evaluator' && (
+          {panelOption === 'evaluator' && (
             <div 
               className="bg-slate-950/85 backdrop-blur-2xl border border-blue-500/40 rounded-2xl p-6 shadow-2xl text-left relative ring-1 ring-blue-500/20"
-              onMouseEnter={() => setHoveredOption('evaluator')}
+              onMouseEnter={() => showOption('evaluator')}
             >
               <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-blue-400 to-transparent" />
               
@@ -156,10 +163,10 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectView }) => {
             </div>
           )}
 
-          {hoveredOption === 'lab' && (
+          {panelOption === 'lab' && (
             <div 
               className="bg-slate-950/85 backdrop-blur-2xl border border-sky-500/40 rounded-2xl p-6 shadow-2xl text-left relative ring-1 ring-sky-500/20"
-              onMouseEnter={() => setHoveredOption('lab')}
+              onMouseEnter={() => showOption('lab')}
             >
               <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-sky-400 to-transparent" />
 

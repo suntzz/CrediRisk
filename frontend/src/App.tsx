@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { flushSync } from 'react-dom';
 import { gsap } from 'gsap';
 import { ThemeProvider } from './context/ThemeContext';
 import { GlobalDock } from './components/GlobalDock';
@@ -20,7 +21,6 @@ const getViewFromHash = (): ViewMode => {
 
 const MainContent: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewMode>(getViewFromHash);
-  const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
   const [health, setHealth] = useState<HealthStatus | null>(null);
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
   const viewContainerRef = useRef<HTMLElement>(null);
@@ -32,10 +32,6 @@ const MainContent: React.FC = () => {
     }
     return false;
   });
-
-  useEffect(() => {
-    currentViewRef.current = currentView;
-  }, [currentView]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -56,15 +52,15 @@ const MainContent: React.FC = () => {
       .catch(err => console.warn('Error cargando metricas:', err.message));
   }, []);
 
-  // Transición rápida, suave y natural entre páginas (100ms salida + 150ms entrada = 250ms total)
+  // Fundido cruzado discreto entre pestañas (120ms salida + 180ms entrada), solo opacidad.
+  // La última navegación solicitada siempre gana: un clic o un "Atrás" a mitad de transición
+  // redirige al nuevo destino en lugar de descartarse, manteniendo URL, vista y dock sincronizados.
+  const transitionPhaseRef = useRef<'idle' | 'out' | 'in'>('idle');
+  const targetViewRef = useRef<ViewMode>(currentView);
+  // El dock refleja el destino solicitado de inmediato, sin esperar a que salga la vista actual
+  const [requestedView, setRequestedView] = useState<ViewMode>(currentView);
+
   const navigateTo = useCallback((targetView: ViewMode, updateHistory = true) => {
-    if (targetView === currentViewRef.current || isTransitioning) return;
-
-    const container = viewContainerRef.current;
-    const prefersReduced = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-
-    setIsTransitioning(true);
-
     if (updateHistory) {
       const newHash = targetView === 'home' ? '#/' : `#/${targetView}`;
       if (window.location.hash !== newHash) {
@@ -72,76 +68,75 @@ const MainContent: React.FC = () => {
       }
     }
 
+    targetViewRef.current = targetView;
+    setRequestedView(targetView);
+    const phase = transitionPhaseRef.current;
+
+    // La salida en curso leerá el destino más reciente al terminar
+    if (phase === 'out') return;
+    if (phase === 'idle' && targetView === currentViewRef.current) return;
+
+    const container = viewContainerRef.current;
+    const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+    const commitView = (view: ViewMode) => {
+      // flushSync garantiza que la vista nueva esté en el DOM antes de iniciar la entrada
+      flushSync(() => setCurrentView(view));
+      currentViewRef.current = view;
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    };
+
     if (!container || prefersReduced) {
-      if (container) {
-        gsap.killTweensOf(container);
-        gsap.to(container, {
-          opacity: 0,
-          duration: 0.08,
-          ease: 'power2.inOut',
-          onComplete: () => {
-            setCurrentView(targetView);
-            window.scrollTo({ top: 0, behavior: 'instant' });
-            gsap.fromTo(
-              container,
-              { opacity: 0 },
-              {
-                opacity: 1,
-                duration: 0.1,
-                ease: 'power2.out',
-                onComplete: () => {
-                  gsap.set(container, { clearProps: 'all' });
-                  setIsTransitioning(false);
-                }
-              }
-            );
-          }
-        });
-      } else {
-        setCurrentView(targetView);
-        setIsTransitioning(false);
-      }
+      commitView(targetView);
       return;
     }
 
+    const fadeIn = () => {
+      transitionPhaseRef.current = 'in';
+      gsap.to(container, {
+        opacity: 1,
+        duration: 0.18,
+        ease: 'power2.out',
+        onComplete: () => {
+          gsap.set(container, { clearProps: 'opacity,pointerEvents' });
+          transitionPhaseRef.current = 'idle';
+        }
+      });
+    };
+
     gsap.killTweensOf(container);
+
+    // Se pidió volver a la vista que ya está entrando: basta con completar la entrada
+    if (phase === 'in' && targetView === currentViewRef.current) {
+      fadeIn();
+      return;
+    }
+
+    transitionPhaseRef.current = 'out';
+    gsap.set(container, { pointerEvents: 'none' });
     gsap.to(container, {
       opacity: 0,
-      y: -6,
-      duration: 0.1,
-      ease: 'power2.inOut',
+      duration: 0.12,
+      ease: 'power2.in',
       onComplete: () => {
-        setCurrentView(targetView);
-        window.scrollTo({ top: 0, behavior: 'instant' });
-
-        gsap.fromTo(
-          container,
-          {
-            opacity: 0,
-            y: 8,
-          },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.15,
-            ease: 'power2.out',
-            onComplete: () => {
-              gsap.set(container, { clearProps: 'all' });
-              setIsTransitioning(false);
-            }
-          }
-        );
+        const next = targetViewRef.current;
+        if (next !== currentViewRef.current) commitView(next);
+        fadeIn();
       }
     });
-  }, [isTransitioning]);
+  }, []);
+
+  // El scroll lo gestiona la navegación; evita que el navegador lo restaure sobre la vista saliente
+  useEffect(() => {
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+  }, []);
 
   // Sincronización con botones Atrás y Adelante del navegador
   useEffect(() => {
     const handlePopState = () => {
-      const target = getViewFromHash();
-      if (target !== currentViewRef.current) {
-        navigateTo(target, false);
-      }
+      navigateTo(getViewFromHash(), false);
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -216,14 +211,12 @@ const MainContent: React.FC = () => {
       </div>
 
       {/* Dock Global Compartido con GooeyNav y Liquid Glass */}
-      <GlobalDock currentView={currentView} onNavigate={navigateTo} />
+      <GlobalDock currentView={requestedView} onNavigate={navigateTo} />
 
       {/* Contenedor Principal con Transición Fluida */}
       <main
         ref={viewContainerRef}
-        className={`flex-1 w-full relative z-10 transition-opacity print:m-0 print:p-0 ${
-          isTransitioning ? 'pointer-events-none' : ''
-        }`}
+        className="flex-1 w-full relative z-10 print:m-0 print:p-0"
       >
         {renderCurrentView()}
       </main>

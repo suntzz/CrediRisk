@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { 
   BarChart3, 
   Layers, 
@@ -42,6 +42,29 @@ export const ModelLabView: React.FC<ModelLabViewProps> = ({
   const [selectedFigure, setSelectedFigure] = useState<DocFigure | null>(null);
   const [sortField, setSortField] = useState<string>('val_auc');
   const [sortAsc, setSortAsc] = useState<boolean>(false);
+  const subNavRef = useRef<HTMLDivElement>(null);
+  const tabContentRef = useRef<HTMLDivElement>(null);
+  const isFirstTabRender = useRef(true);
+
+  const closeConcept = useCallback(() => setSelectedConcept(null), []);
+  const closeFigure = useCallback(() => setSelectedFigure(null), []);
+
+  // Al cambiar de pestaña con la página desplazada, la nueva pestaña empieza justo bajo la navegación fija
+  // (antes se conservaba el scroll de la pestaña anterior y el contenido aparecía a mitad o saltaba).
+  useLayoutEffect(() => {
+    if (isFirstTabRender.current) {
+      isFirstTabRender.current = false;
+      return;
+    }
+    const subNav = subNavRef.current;
+    const content = tabContentRef.current;
+    if (!subNav || !content) return;
+    const navBottom = subNav.getBoundingClientRect().bottom;
+    const contentTop = content.getBoundingClientRect().top;
+    if (contentTop < navBottom) {
+      window.scrollTo({ top: window.scrollY + contentTop - navBottom, behavior: 'instant' });
+    }
+  }, [activeTab]);
 
   const evalData = metrics?.evaluation;
   // Valores oficiales certificados respaldados por reports/final_evaluation.json y README.md
@@ -91,7 +114,7 @@ export const ModelLabView: React.FC<ModelLabViewProps> = ({
   return (
     <div className="w-full flex flex-col bg-transparent text-slate-100 transition-colors pb-12">
       {/* Navegación Secundaria Flotante: Liquid Glass Segmented Pill Dock */}
-      <div className="sticky top-[4.25rem] sm:top-20 z-30 w-full px-4 sm:px-6 py-2 pointer-events-none select-none">
+      <div ref={subNavRef} className="sticky top-[4.25rem] sm:top-20 z-30 w-full px-4 sm:px-6 py-2 pointer-events-none select-none">
         <div className="max-w-4xl mx-auto flex items-center justify-center pointer-events-auto">
           <nav className="inline-flex items-center p-1 sm:p-1.5 rounded-full border border-white/10 bg-slate-950/75 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.65),inset_0_1px_1px_rgba(255,255,255,0.18),inset_0_-1px_1px_rgba(0,0,0,0.4)] no-scrollbar max-w-full overflow-x-auto">
             {navTabs.map(tab => (
@@ -114,7 +137,7 @@ export const ModelLabView: React.FC<ModelLabViewProps> = ({
       </div>
 
       {/* Área de Contenido Principal del Laboratorio */}
-      <div className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
+      <div ref={tabContentRef} className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
         {/* PESTAÑA 1: RESUMEN Y ESTADO */}
         {activeTab === 'summary' && (
           <div className="space-y-6 animate-in fade-in duration-200">
@@ -914,13 +937,13 @@ export const ModelLabView: React.FC<ModelLabViewProps> = ({
       {/* Modal Interactivo de Explicación Conceptual Pedagógica (3 Niveles) */}
       <ConceptExplainerModal
         conceptKey={selectedConcept}
-        onClose={() => setSelectedConcept(null)}
+        onClose={closeConcept}
       />
 
       {/* Modal Interactivo de Inspección de Figuras y Gráficas de Investigación */}
       <FigureModal
         figure={selectedFigure}
-        onClose={() => setSelectedFigure(null)}
+        onClose={closeFigure}
       />
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import { 
   ArrowLeft, 
   ArrowRight, 
@@ -106,6 +106,24 @@ export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [loadingSample, setLoadingSample] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const formTopRef = useRef<HTMLDivElement>(null);
+  const isFirstFormRender = useRef(true);
+
+  // Al cambiar de etapa, mostrar un error o el dictamen, si el inicio del formulario quedó fuera de vista
+  // se lleva a la vista (antes el banner de error empujaba "Continuar" fuera de pantalla).
+  useLayoutEffect(() => {
+    if (isFirstFormRender.current) {
+      isFirstFormRender.current = false;
+      return;
+    }
+    const formTop = formTopRef.current;
+    if (!formTop) return;
+    const top = formTop.getBoundingClientRect().top;
+    const offset = parseFloat(getComputedStyle(formTop).scrollMarginTop) || 0;
+    if (top < offset) {
+      formTop.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    }
+  }, [currentStep, errorMsg, prediction]);
 
   // Field change handler: conserva valores vacíos como '' y no los fuerza a 0
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -540,7 +558,7 @@ export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
   return (
     <div className="w-full flex flex-col bg-transparent text-slate-100 transition-colors">
       {/* Main Container */}
-      <div className="flex-1 max-w-4xl w-full mx-auto px-6 py-6 sm:py-8 print:hidden">
+      <div ref={formTopRef} className="flex-1 max-w-4xl w-full mx-auto px-6 py-6 sm:py-8 scroll-mt-20 print:hidden">
         {/* Error notification */}
         {errorMsg && (
           <div className="mb-6 p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-300 text-xs flex items-start justify-between shadow-sm animate-in fade-in duration-150">
