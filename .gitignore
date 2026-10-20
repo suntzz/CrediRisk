@@ -26,3 +26,7 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Entregas y zips
+entrega/
+*.zip

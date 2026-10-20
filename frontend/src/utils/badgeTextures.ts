@@ -4,6 +4,8 @@ export interface BadgeStudent {
   codigo: string;
   correo: string;
   iniciales: string;
+  badgeUrl?: string;
+  foto?: string;
 }
 
 export const TEAM_MEMBERS: BadgeStudent[] = [
@@ -13,6 +15,7 @@ export const TEAM_MEMBERS: BadgeStudent[] = [
     codigo: '67001077',
     correo: 'lvguecha77@ucatolica.edu.co',
     iniciales: 'LG',
+    badgeUrl: '/team/badge-1.png',
   },
   {
     id: 2,
@@ -20,6 +23,8 @@ export const TEAM_MEMBERS: BadgeStudent[] = [
     codigo: '67000979',
     correo: 'snhernandez79@ucatolica.edu.co',
     iniciales: 'SH',
+    badgeUrl: '/team/badge-2.png',
+    foto: '/team/sharick.png',
   },
   {
     id: 3,
@@ -27,6 +32,7 @@ export const TEAM_MEMBERS: BadgeStudent[] = [
     codigo: '67000991',
     correo: 'lsdiaz91@ucatolica.edu.co',
     iniciales: 'LD',
+    badgeUrl: '/team/badge-3.png',
   },
   {
     id: 4,
@@ -34,6 +40,8 @@ export const TEAM_MEMBERS: BadgeStudent[] = [
     codigo: '67001118',
     correo: 'icsolano18@ucatolica.edu.co',
     iniciales: 'IS',
+    badgeUrl: '/team/badge-4.png',
+    foto: '/team/ivan.png',
   },
   {
     id: 5,
@@ -41,10 +49,19 @@ export const TEAM_MEMBERS: BadgeStudent[] = [
     codigo: '67001140',
     correo: 'ccmartinez40@ucatolica.edu.co',
     iniciales: 'CM',
+    badgeUrl: '/team/badge-5.png',
+    foto: '/team/cristian.png',
   },
 ];
 
 export function generateBadgeDataUrls(student: BadgeStudent): { front: string; back: string } {
+  if (student.badgeUrl) {
+    return {
+      front: student.badgeUrl,
+      back: '/brand/credirisk-card-back.png',
+    };
+  }
+
   if (typeof document === 'undefined') {
     return { front: '', back: '' };
   }
