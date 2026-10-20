@@ -22,6 +22,14 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(DIST_DIR, exist_ok=True)
 
 RAW_PHOTOS = {
+    "leidy": {
+        "src": "/Users/suntz/.gemini/antigravity/brain/e36f2d6e-1258-4fb2-a446-7a568418f166/.user_uploaded/media_1792517411907_e4b0231e.jpg",
+        "crop": (0, 220, 575, 830),
+        "brightness": 1.04,
+        "contrast": 1.12,
+        "sharpness": 1.32,
+        "target_h": 790,
+    },
     "sharick": {
         "src": "/Users/suntz/.gemini/antigravity/brain/e36f2d6e-1258-4fb2-a446-7a568418f166/.user_uploaded/media_1792463670021_781ebaab.jpg",
         "crop": (0, 80, 768, 700),
@@ -63,7 +71,7 @@ TEAM_MEMBERS = [
         "codigo": "67001077",
         "handle": "@lvguecha77",
         "iniciales": "LG",
-        "key": None,
+        "key": "leidy",
     },
     {
         "id": 2,
@@ -212,8 +220,17 @@ def add_portrait_to_card(card, cutout_img, target_h=790):
     scale = target_h / ch
     target_w = int(cw * scale)
 
+    # Si el retrato toca el borde lateral izquierdo o derecho, garantizar que cubra el ancho de la tarjeta
+    alpha_arr = np.array(cutout_img.split()[3])
+    touches_left = np.any(alpha_arr[:, :3] > 40)
+    touches_right = np.any(alpha_arr[:, -3:] > 40)
+    if (touches_left or touches_right) and target_w < WIDTH:
+        scale = WIDTH / cw
+        target_w = WIDTH
+        target_h = int(ch * scale)
+
     person = cutout_img.resize((target_w, target_h), Image.Resampling.LANCZOS)
-    px = (WIDTH - target_w) // 2
+    px = 0 if touches_left and not touches_right else (WIDTH - target_w) // 2
     py = HEIGHT - target_h
 
     person_layer = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
