@@ -183,13 +183,17 @@ def create_base_card():
 
     card = Image.fromarray(arr)
 
-    # Marca de agua del logo CrediRisk arriba a la izquierda (sutil, como en ReactBits)
+    # Marca de agua del logo CrediRisk arriba a la izquierda (más luminosa y visible)
     logo_path = os.path.join(BRAND_DIR, "credirisk-icon-192.png")
     if os.path.exists(logo_path):
-        logo = Image.open(logo_path).convert("RGBA").resize((135, 135), Image.Resampling.LANCZOS)
+        logo = Image.open(logo_path).convert("RGBA").resize((138, 138), Image.Resampling.LANCZOS)
         lr, lg, lb, la = logo.split()
-        la = la.point(lambda p: int(p * 0.13))
-        watermark = Image.merge("RGBA", (lr, lg, lb, la))
+        l_rgb = Image.merge("RGB", (lr, lg, lb))
+        l_rgb = ImageEnhance.Brightness(l_rgb).enhance(1.55)
+        l_rgb = ImageEnhance.Color(l_rgb).enhance(1.25)
+        lr2, lg2, lb2 = l_rgb.split()
+        la = la.point(lambda p: int(p * 0.52))
+        watermark = Image.merge("RGBA", (lr2, lg2, lb2, la))
         card.alpha_composite(watermark, (64, 82))
 
     return card
@@ -276,6 +280,57 @@ def render_member_card(member, cutouts):
     return card
 
 
+def update_card_back():
+    y_idx, x_idx = np.mgrid[0:HEIGHT, 0:WIDTH].astype(np.float32)
+    ratio_y = y_idx / HEIGHT
+
+    r = 13 * (1 - ratio_y) + 7 * ratio_y
+    g = 21 * (1 - ratio_y) + 12 * ratio_y
+    b = 38 * (1 - ratio_y) + 26 * ratio_y
+
+    cx, cy = WIDTH * 0.5, HEIGHT * 0.48
+    dist = np.sqrt(((x_idx - cx) / (WIDTH * 0.46)) ** 2 + ((y_idx - cy) / (HEIGHT * 0.36)) ** 2)
+    glow = np.clip(1.0 - dist, 0.0, 1.0) ** 1.7
+
+    r += glow * 28
+    g += glow * 72
+    b += glow * 155
+
+    arr = np.zeros((HEIGHT, WIDTH, 4), dtype=np.uint8)
+    arr[:, :, 0] = np.clip(r, 0, 255).astype(np.uint8)
+    arr[:, :, 1] = np.clip(g, 0, 255).astype(np.uint8)
+    arr[:, :, 2] = np.clip(b, 0, 255).astype(np.uint8)
+    arr[:, :, 3] = 255
+    back = Image.fromarray(arr)
+
+    logo_path = os.path.join(BRAND_DIR, "credirisk-icon-512.png")
+    if os.path.exists(logo_path):
+        logo = Image.open(logo_path).convert("RGBA").resize((380, 380), Image.Resampling.LANCZOS)
+        lr, lg, lb, la = logo.split()
+        l_rgb = Image.merge("RGB", (lr, lg, lb))
+        l_rgb = ImageEnhance.Brightness(l_rgb).enhance(1.45)
+        l_rgb = ImageEnhance.Contrast(l_rgb).enhance(1.15)
+        l_rgb = ImageEnhance.Color(l_rgb).enhance(1.20)
+        lr2, lg2, lb2 = l_rgb.split()
+
+        glow_logo = Image.merge("RGBA", (lr2, lg2, lb2, la.point(lambda p: int(p * 0.55)))).filter(ImageFilter.GaussianBlur(14))
+        pos = ((WIDTH - 380) // 2, (HEIGHT - 380) // 2 - 25)
+        back.alpha_composite(glow_logo, pos)
+
+        bright_logo = Image.merge("RGBA", (lr2, lg2, lb2, la.point(lambda p: int(p * 0.95))))
+        back.alpha_composite(bright_logo, pos)
+
+    draw = ImageDraw.Draw(back)
+    font_bottom = ImageFont.truetype("/System/Library/Fonts/SFNSMono.ttf", 23)
+    draw.text((WIDTH // 2, HEIGHT - 85), "credirisk · ucatolica.edu.co", font=font_bottom, fill=(186, 230, 253, 210), anchor="mm")
+
+    out_path = os.path.join(BRAND_DIR, "credirisk-card-back.png")
+    back.save(out_path, "PNG", optimize=True)
+    dist_brand = "frontend/dist/brand"
+    os.makedirs(dist_brand, exist_ok=True)
+    shutil.copy2(out_path, os.path.join(dist_brand, "credirisk-card-back.png"))
+
+
 def main():
     cutouts = extract_and_prepare_cutouts()
     for m in TEAM_MEMBERS:
@@ -284,6 +339,8 @@ def main():
         badge.save(out_path, "PNG", optimize=True)
         shutil.copy2(out_path, os.path.join(DIST_DIR, f"badge-{m['id']}.png"))
         print(f"✓ Generada tarjeta limpia: {out_path}")
+    update_card_back()
+    print("✓ Reverso luminoso actualizado.")
 
 
 if __name__ == "__main__":
