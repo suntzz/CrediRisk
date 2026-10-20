@@ -1,206 +1,290 @@
 #!/usr/bin/env python3
 """
-Script para generar las texturas frontales de alta resolución (800x1125)
-de las credenciales 3D de CrediRisk para los 5 integrantes del equipo.
-Integra las fotos procesadas y mejoradas con la estética y paleta de la web.
+Generador de tarjetas 3D minimalistas estilo ReactBits / CrediRisk:
+- Sin banners, sin cajas, sin códigos de barras ni círculos.
+- Fondo en la paleta oscura de la página (#0b1120 -> #0f172a -> #070b16) con halo azul/cian sutil.
+- Descontaminación de color en bordes (elimina cualquier halo blanco de la pared original en el cabello).
+- Retrato recortado limpio en la parte inferior con una línea die-cut sutil (15% opacidad).
 """
 
 import os
 import shutil
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+import rembg
+from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance
 
 WIDTH = 800
 HEIGHT = 1125
 OUTPUT_DIR = "frontend/public/team"
 DIST_DIR = "frontend/dist/team"
+BRAND_DIR = "frontend/public/brand"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(DIST_DIR, exist_ok=True)
+
+RAW_PHOTOS = {
+    "sharick": {
+        "src": "/Users/suntz/.gemini/antigravity/brain/e36f2d6e-1258-4fb2-a446-7a568418f166/.user_uploaded/media_1792463670021_781ebaab.jpg",
+        "crop": (0, 80, 768, 700),
+        "brightness": 1.04,
+        "contrast": 1.12,
+        "sharpness": 1.30,
+        "target_h": 790,
+    },
+    "ivan": {
+        "src": "/Users/suntz/.gemini/antigravity/brain/e36f2d6e-1258-4fb2-a446-7a568418f166/.user_uploaded/media_1792463670024_b054e46d.jpg",
+        "crop": (0, 100, 768, 750),
+        "brightness": 1.05,
+        "contrast": 1.14,
+        "sharpness": 1.30,
+        "target_h": 790,
+    },
+    "cristian": {
+        "src": "/Users/suntz/.gemini/antigravity/brain/e36f2d6e-1258-4fb2-a446-7a568418f166/.user_uploaded/media_1792463670027_733be766.jpg",
+        "crop": (80, 10, 960, 769),
+        "brightness": 1.07,
+        "contrast": 1.14,
+        "sharpness": 1.30,
+        "target_h": 790,
+    },
+}
 
 TEAM_MEMBERS = [
     {
         "id": 1,
         "nombre": "Leidy Vanessa Guecha Alape",
         "codigo": "67001077",
-        "correo": "lvguecha77@ucatolica.edu.co",
+        "handle": "@lvguecha77",
         "iniciales": "LG",
-        "photo": None,
+        "key": None,
     },
     {
         "id": 2,
         "nombre": "Sharick Natalia Hernández Gómez",
         "codigo": "67000979",
-        "correo": "snhernandez79@ucatolica.edu.co",
+        "handle": "@snhernandez79",
         "iniciales": "SH",
-        "photo": "sharick-avatar-v2.png",
+        "key": "sharick",
     },
     {
         "id": 3,
         "nombre": "Laura Sofia Diaz Suarez",
         "codigo": "67000991",
-        "correo": "lsdiaz91@ucatolica.edu.co",
+        "handle": "@lsdiaz91",
         "iniciales": "LD",
-        "photo": None,
+        "key": None,
     },
     {
         "id": 4,
         "nombre": "Iván Camilo Solano Sánchez",
         "codigo": "67001118",
-        "correo": "icsolano18@ucatolica.edu.co",
+        "handle": "@icsolano18",
         "iniciales": "IS",
-        "photo": "ivan-avatar-v2.png",
+        "key": "ivan",
     },
     {
         "id": 5,
         "nombre": "Cristian Camilo Martínez Delgado",
         "codigo": "67001140",
-        "correo": "ccmartinez40@ucatolica.edu.co",
+        "handle": "@ccmartinez40",
         "iniciales": "CM",
-        "photo": "cristian-avatar-v2.png",
+        "key": "cristian",
     },
 ]
 
-def render_badge(member):
-    # 1. Fondo gradiente profundo CrediRisk: #0b1120 -> #0f172a -> #020617
-    bg_arr = np.zeros((HEIGHT, WIDTH, 4), dtype=np.uint8)
-    for y in range(HEIGHT):
-        ratio = y / HEIGHT
-        if ratio < 0.5:
-            r = 11 * (1 - ratio*2) + 15 * (ratio*2)
-            g = 17 * (1 - ratio*2) + 23 * (ratio*2)
-            b = 32 * (1 - ratio*2) + 42 * (ratio*2)
-        else:
-            r2 = (ratio - 0.5) * 2
-            r = 15 * (1 - r2) + 2 * r2
-            g = 23 * (1 - r2) + 6 * r2
-            b = 42 * (1 - r2) + 23 * r2
-        bg_arr[y, :, 0] = int(r)
-        bg_arr[y, :, 1] = int(g)
-        bg_arr[y, :, 2] = int(b)
-        bg_arr[y, :, 3] = 255
-    img = Image.fromarray(bg_arr)
-    draw = ImageDraw.Draw(img)
 
-    # 2. Header banner gradiente azul tecnológico: #1d4ed8 -> #2563eb -> #3b82f6
-    for x in range(WIDTH):
-        ratio = x / WIDTH
-        if ratio < 0.5:
-            r = int(29 * (1 - ratio*2) + 37 * (ratio*2))
-            g = int(78 * (1 - ratio*2) + 99 * (ratio*2))
-            b = int(216 * (1 - ratio*2) + 235 * (ratio*2))
-        else:
-            r2 = (ratio - 0.5) * 2
-            r = int(37 * (1 - r2) + 59 * r2)
-            g = int(99 * (1 - r2) + 130 * r2)
-            b = int(235 * (1 - r2) + 246 * r2)
-        draw.line([(x, 0), (x, 140)], fill=(r, g, b, 255))
+def clean_and_grade_portrait(img_rgba, cfg):
+    """
+    1. Descontamina los bordes semitransparentes para eliminar el fondo blanco del cabello.
+    2. Aplica colorimetría fría armónica con CrediRisk (#0b1120 / #2563eb / #38bdf8).
+    """
+    r, g, b, a = img_rgba.split()
+    rgb = Image.merge("RGB", (r, g, b))
 
-    # Línea decorativa dorada
-    draw.rectangle([(0, 140), (WIDTH, 144)], fill=(245, 158, 11, 255))
+    rgb = ImageEnhance.Brightness(rgb).enhance(cfg.get("brightness", 1.04))
+    rgb = ImageEnhance.Contrast(rgb).enhance(cfg.get("contrast", 1.12))
+    rgb = ImageEnhance.Color(rgb).enhance(0.86)
+    rgb = ImageEnhance.Sharpness(rgb).enhance(cfg.get("sharpness", 1.3))
 
-    # Fuentes
-    font_bold = ImageFont.truetype('/System/Library/Fonts/Supplemental/Arial Bold.ttf', 26)
-    font_sub = ImageFont.truetype('/System/Library/Fonts/SFNSMono.ttf', 17)
-    font_lab = ImageFont.truetype('/System/Library/Fonts/SFNSMono.ttf', 14)
-    font_name = ImageFont.truetype('/System/Library/Fonts/Supplemental/Arial Bold.ttf', 31)
-    font_pill = ImageFont.truetype('/System/Library/Fonts/SFNSMono.ttf', 15)
-    font_box_label = ImageFont.truetype('/System/Library/Fonts/SFNSMono.ttf', 15)
-    font_code = ImageFont.truetype('/System/Library/Fonts/Supplemental/Arial Bold.ttf', 28)
-    font_email = ImageFont.truetype('/System/Library/Fonts/SFNSMono.ttf', 20)
-    font_footer_id = ImageFont.truetype('/System/Library/Fonts/SFNSMono.ttf', 14)
-    font_footer_text = ImageFont.truetype('/System/Library/Fonts/Supplemental/Arial.ttf', 13)
+    arr = np.array(rgb, dtype=np.float32)
+    alpha_raw = np.array(a, dtype=np.float32) / 255.0
 
-    # Textos del encabezado
-    draw.text((WIDTH / 2, 45), 'UNIVERSIDAD CATÓLICA DE COLOMBIA', font=font_bold, fill=(255, 255, 255, 255), anchor='mm')
-    draw.text((WIDTH / 2, 85), 'FACULTAD DE INGENIERÍA · SISTEMAS', font=font_sub, fill=(255, 255, 255, 230), anchor='mm')
-    draw.text((WIDTH / 2, 115), 'CREDIRISK NEURAL LAB', font=font_lab, fill=(255, 255, 255, 190), anchor='mm')
+    # Contraer ligeramente la máscara alfa y hacer rampa suave para cortar cualquier borde blanco de pared
+    a_eroded = a.filter(ImageFilter.MinFilter(3)).filter(ImageFilter.GaussianBlur(1.2))
+    alpha_norm = np.array(a_eroded, dtype=np.float32) / 255.0
+    # Ramp: lo menor a 0.35 se vuelve 0, lo mayor a 0.85 se vuelve 1
+    alpha_clean = np.clip((alpha_norm - 0.32) / 0.52, 0.0, 1.0)
 
-    # Ranura del Lanyard (Slot indicator)
-    draw.rounded_rectangle([(WIDTH / 2 - 80, 156), (WIDTH / 2 + 80, 180)], radius=8, outline=(255, 255, 255, 50), width=2)
+    # Descontaminación de color en el borde: oscurecer píxeles de borde hacia azul noche (#0b1120)
+    edge_factor = alpha_clean ** 0.75
+    arr[:, :, 0] = arr[:, :, 0] * edge_factor + 11.0 * (1.0 - edge_factor)
+    arr[:, :, 1] = arr[:, :, 1] * edge_factor + 17.0 * (1.0 - edge_factor)
+    arr[:, :, 2] = arr[:, :, 2] * edge_factor + 32.0 * (1.0 - edge_factor)
 
-    # Contenedor del Avatar en (400, 350) con radio 120 (diámetro 240)
-    cx, cy = WIDTH // 2, 350
-    radius = 120
+    # Armonización tonal con la paleta azul/cian de la página
+    lum = (0.299 * arr[:, :, 0] + 0.587 * arr[:, :, 1] + 0.114 * arr[:, :, 2]) / 255.0
+    shadow_weight = (1.0 - lum) ** 1.5
+    mid_weight = 4.0 * lum * (1.0 - lum)
 
-    # Halo radial de luz azul eléctrica detrás del avatar
-    glow_size = 350
-    glow_img = Image.new('RGBA', (glow_size, glow_size), (0, 0, 0, 0))
-    glow_draw = ImageDraw.Draw(glow_img)
-    glow_draw.ellipse([(20, 20), (glow_size - 20, glow_size - 20)], fill=(37, 99, 235, 110))
-    glow_img = glow_img.filter(ImageFilter.GaussianBlur(40))
-    img.alpha_composite(glow_img, (cx - glow_size // 2, cy - glow_size // 2))
+    arr[:, :, 0] = arr[:, :, 0] * 0.95 - shadow_weight * 5.0
+    arr[:, :, 1] = arr[:, :, 1] * 0.99 + mid_weight * 3.0
+    arr[:, :, 2] = arr[:, :, 2] * 1.07 + shadow_weight * 16.0 + mid_weight * 8.0
 
-    # Avatar: Foto o Monograma
-    photo_file = member.get("photo")
-    if photo_file:
-        photo_path = os.path.join(OUTPUT_DIR, photo_file)
-        if os.path.exists(photo_path):
-            circ_photo = Image.open(photo_path).convert('RGBA').resize((radius * 2, radius * 2), Image.Resampling.LANCZOS)
-            img.alpha_composite(circ_photo, (cx - radius, cy - radius))
+    arr = np.clip(arr, 0, 255).astype(np.uint8)
+    final_a = (alpha_clean * 255.0).astype(np.uint8)
+
+    rgba_arr = np.dstack([arr, final_a])
+    return Image.fromarray(rgba_arr)
+
+
+def extract_and_prepare_cutouts():
+    cutouts = {}
+    for key, cfg in RAW_PHOTOS.items():
+        print(f"Procesando retrato limpio de {key}...")
+        raw = Image.open(cfg["src"]).convert("RGB")
+        cropped = raw.crop(cfg["crop"])
+        cutout = rembg.remove(cropped)
+        graded = clean_and_grade_portrait(cutout, cfg)
+
+        bbox = graded.split()[3].point(lambda p: 255 if p > 20 else 0).getbbox()
+        if bbox:
+            graded = graded.crop((bbox[0], bbox[1], bbox[2], cropped.height))
+
+        out_path = os.path.join(OUTPUT_DIR, f"{key}-cutout.png")
+        graded.save(out_path, "PNG")
+        cutouts[key] = (graded, cfg.get("target_h", 790))
+    return cutouts
+
+
+def create_base_card():
+    """
+    Superficie oscura CrediRisk (#0b1120 -> #0f172a -> #060b16) con halo azul/cian suave.
+    """
+    y_idx, x_idx = np.mgrid[0:HEIGHT, 0:WIDTH].astype(np.float32)
+    ratio_y = y_idx / HEIGHT
+
+    r = 12 * (1 - ratio_y) + 6 * ratio_y
+    g = 19 * (1 - ratio_y) + 10 * ratio_y
+    b = 35 * (1 - ratio_y) + 22 * ratio_y
+
+    # Halo radial azul/cian detrás del retrato
+    cx, cy = WIDTH * 0.5, HEIGHT * 0.58
+    dist = np.sqrt(((x_idx - cx) / (WIDTH * 0.48)) ** 2 + ((y_idx - cy) / (HEIGHT * 0.38)) ** 2)
+    glow = np.clip(1.0 - dist, 0.0, 1.0) ** 1.8
+
+    r += glow * 20
+    g += glow * 52
+    b += glow * 115
+
+    arr = np.zeros((HEIGHT, WIDTH, 4), dtype=np.uint8)
+    arr[:, :, 0] = np.clip(r, 0, 255).astype(np.uint8)
+    arr[:, :, 1] = np.clip(g, 0, 255).astype(np.uint8)
+    arr[:, :, 2] = np.clip(b, 0, 255).astype(np.uint8)
+    arr[:, :, 3] = 255
+
+    card = Image.fromarray(arr)
+
+    # Marca de agua del logo CrediRisk arriba a la izquierda (sutil, como en ReactBits)
+    logo_path = os.path.join(BRAND_DIR, "credirisk-icon-192.png")
+    if os.path.exists(logo_path):
+        logo = Image.open(logo_path).convert("RGBA").resize((135, 135), Image.Resampling.LANCZOS)
+        lr, lg, lb, la = logo.split()
+        la = la.point(lambda p: int(p * 0.13))
+        watermark = Image.merge("RGBA", (lr, lg, lb, la))
+        card.alpha_composite(watermark, (64, 82))
+
+    return card
+
+
+def add_portrait_to_card(card, cutout_img, target_h=790):
+    cw, ch = cutout_img.size
+    scale = target_h / ch
+    target_w = int(cw * scale)
+
+    person = cutout_img.resize((target_w, target_h), Image.Resampling.LANCZOS)
+    px = (WIDTH - target_w) // 2
+    py = HEIGHT - target_h
+
+    person_layer = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
+    person_layer.paste(person, (px, py))
+
+    # Contorno die-cut ultra sutil (solo una línea fina translúcida a 14px de la silueta, sin relleno blanco)
+    alpha = person_layer.split()[3]
+    binary_mask = alpha.point(lambda p: 255 if p > 80 else 0)
+
+    outer = binary_mask.filter(ImageFilter.MaxFilter(29))
+    inner = binary_mask.filter(ImageFilter.MaxFilter(25))
+    ring_arr = np.clip(np.array(outer, dtype=np.int16) - np.array(inner, dtype=np.int16), 0, 255).astype(np.float32)
+    ring_img = Image.fromarray(ring_arr.astype(np.uint8)).filter(ImageFilter.GaussianBlur(1.0))
+
+    # Crear capa RGBA para la línea die-cut con opacidad baja (18%) en azul cian pizarra
+    ring_alpha = (np.array(ring_img, dtype=np.float32) * 0.18).astype(np.uint8)
+    diecut_rgba = np.zeros((HEIGHT, WIDTH, 4), dtype=np.uint8)
+    diecut_rgba[:, :, 0] = 96
+    diecut_rgba[:, :, 1] = 165
+    diecut_rgba[:, :, 2] = 250
+    diecut_rgba[:, :, 3] = ring_alpha
+    card.alpha_composite(Image.fromarray(diecut_rgba))
+
+    # Componer retrato limpio
+    card.alpha_composite(person_layer)
+
+    # Viñeta inferior suave para fundir la base con el borde inferior de la tarjeta
+    v_arr = np.zeros((HEIGHT, WIDTH, 4), dtype=np.uint8)
+    fade_start = int(HEIGHT * 0.82)
+    for y in range(fade_start, HEIGHT):
+        t = ((y - fade_start) / (HEIGHT - fade_start)) ** 1.6
+        v_arr[y, :, 0] = 6
+        v_arr[y, :, 1] = 10
+        v_arr[y, :, 2] = 22
+        v_arr[y, :, 3] = int(t * 170)
+    card.alpha_composite(Image.fromarray(v_arr))
+
+
+def add_minimal_silhouette(card, member):
+    sil_layer = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
+    s_draw = ImageDraw.Draw(sil_layer)
+
+    cx = WIDTH // 2
+    head_cy = 530
+    head_r = 120
+    s_draw.ellipse([(cx - head_r, head_cy - head_r), (cx + head_r, head_cy + head_r)], fill=(15, 23, 42, 235), outline=(56, 189, 248, 70), width=2)
+    s_draw.ellipse([(cx - 310, 700), (cx + 310, 1340)], fill=(15, 23, 42, 235), outline=(56, 189, 248, 70), width=2)
+
+    font_init = ImageFont.truetype("/System/Library/Fonts/SFNSMono.ttf", 68)
+    s_draw.text((cx, head_cy), member["iniciales"], font=font_init, fill=(125, 211, 252, 200), anchor="mm")
+
+    card.alpha_composite(sil_layer)
+
+
+def render_member_card(member, cutouts):
+    card = create_base_card()
+
+    key = member.get("key")
+    if key and key in cutouts:
+        cutout_img, target_h = cutouts[key]
+        add_portrait_to_card(card, cutout_img, target_h=target_h)
+        avatar_out = os.path.join(OUTPUT_DIR, f"{key}.png")
+        card.save(avatar_out, "PNG")
+        shutil.copy2(avatar_out, os.path.join(DIST_DIR, f"{key}.png"))
     else:
-        # Monograma elegante
-        draw.ellipse([(cx - radius, cy - radius), (cx + radius, cy + radius)], fill=(30, 41, 59, 255))
-        font_mono_large = ImageFont.truetype('/System/Library/Fonts/SFNSMono.ttf', 82)
-        draw.text((cx, cy), member['iniciales'], font=font_mono_large, fill=(96, 165, 250, 255), anchor='mm')
+        add_minimal_silhouette(card, member)
 
-    # Anillo exterior doble con estética de cian / azul brillante
-    draw.ellipse([(cx - radius, cy - radius), (cx + radius, cy + radius)], outline=(37, 99, 235, 255), width=6)
-    draw.ellipse([(cx - radius - 3, cy - radius - 3), (cx + radius + 3, cy + radius + 3)], outline=(56, 189, 248, 140), width=2)
+    draw = ImageDraw.Draw(card)
+    font_handle = ImageFont.truetype("/System/Library/Fonts/SFNSMono.ttf", 23)
+    draw.text((WIDTH - 56, 70), member["handle"], font=font_handle, fill=(148, 163, 184, 180), anchor="rm")
 
-    # Nombre del estudiante centrado
-    draw.text((WIDTH / 2, 535), member['nombre'].upper(), font=font_name, fill=(255, 255, 255, 255), anchor='mm')
+    return card
 
-    # Pill: Credencial de Investigador
-    pill_w, pill_h = 340, 36
-    px1, py1 = WIDTH / 2 - pill_w / 2, 575
-    px2, py2 = WIDTH / 2 + pill_w / 2, py1 + pill_h
-    draw.rounded_rectangle([(px1, py1), (px2, py2)], radius=18, fill=(30, 58, 138, 200), outline=(96, 165, 250, 180), width=2)
-    draw.text((WIDTH / 2, py1 + pill_h / 2), 'CREDENCIAL DE INVESTIGADOR', font=font_pill, fill=(186, 230, 253, 255), anchor='mm')
-
-    # Caja de datos institucionales
-    bx1, by1 = WIDTH / 2 - 330, 655
-    bx2, by2 = WIDTH / 2 + 330, by1 + 195
-    draw.rounded_rectangle([(bx1, by1), (bx2, by2)], radius=16, fill=(15, 23, 42, 230), outline=(51, 65, 85, 200), width=2)
-
-    draw.text((bx1 + 36, by1 + 32), 'CÓDIGO INSTITUCIONAL', font=font_box_label, fill=(148, 163, 184, 255))
-    draw.text((bx1 + 36, by1 + 60), member['codigo'], font=font_code, fill=(56, 189, 248, 255))
-
-    draw.line([(bx1 + 36, by1 + 104), (bx2 - 36, by1 + 104)], fill=(51, 65, 85, 180), width=1)
-
-    draw.text((bx1 + 36, by1 + 124), 'CORREO INSTITUCIONAL', font=font_box_label, fill=(148, 163, 184, 255))
-    draw.text((bx1 + 36, by1 + 152), member['correo'], font=font_email, fill=(226, 232, 240, 255))
-
-    # Código de barras
-    bar_y = 905
-    draw.rectangle([(WIDTH / 2 - 250, bar_y), (WIDTH / 2 + 250, bar_y + 65)], fill=(255, 255, 255, 255))
-    
-    curr_x = WIDTH / 2 - 230
-    seed = (member['id'] * 17 + int(member['codigo'][-4:])) % 1000
-    for i in range(68):
-        bw = 5 if (i * 7 + seed) % 5 == 0 else (3 if i % 3 == 0 else 1.5)
-        if (i * 11 + seed) % 7 != 2:
-            draw.rectangle([(curr_x, bar_y + 6), (curr_x + bw, bar_y + 59)], fill=(0, 0, 0, 255))
-        curr_x += bw + 3
-        if curr_x > WIDTH / 2 + 230:
-            break
-
-    # Textos de autenticidad en el pie
-    cod = member['codigo']
-    draw.text((WIDTH / 2, 1025), f'VERIFICACIÓN DE AUTENTICIDAD · ID: {cod}', font=font_footer_id, fill=(100, 116, 139, 255), anchor='mm')
-    draw.text((WIDTH / 2, 1055), 'Bogotá D.C., Colombia · Redes Neuronales Profundas', font=font_footer_text, fill=(71, 85, 105, 255), anchor='mm')
-
-    return img
 
 def main():
-    print("Generando las 5 credenciales de equipo...")
+    cutouts = extract_and_prepare_cutouts()
     for m in TEAM_MEMBERS:
-        badge = render_badge(m)
-        out_file = os.path.join(OUTPUT_DIR, f"badge-{m['id']}.png")
-        badge.save(out_file, "PNG", optimize=True)
-        # Copiar también a dist
-        dist_file = os.path.join(DIST_DIR, f"badge-{m['id']}.png")
-        shutil.copy2(out_file, dist_file)
-        print(f"✓ Guardado {out_file} y {dist_file}")
+        badge = render_member_card(m, cutouts)
+        out_path = os.path.join(OUTPUT_DIR, f"badge-{m['id']}.png")
+        badge.save(out_path, "PNG", optimize=True)
+        shutil.copy2(out_path, os.path.join(DIST_DIR, f"badge-{m['id']}.png"))
+        print(f"✓ Generada tarjeta limpia: {out_path}")
+
 
 if __name__ == "__main__":
     main()
