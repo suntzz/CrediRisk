@@ -15,7 +15,7 @@ export const TEAM_MEMBERS: BadgeStudent[] = [
     codigo: '67001077',
     correo: 'lvguecha77@ucatolica.edu.co',
     iniciales: 'LG',
-    badgeUrl: '/team/badge-1.png?v=3',
+    badgeUrl: '/team/badge-1.png?v=4',
   },
   {
     id: 2,
@@ -23,8 +23,8 @@ export const TEAM_MEMBERS: BadgeStudent[] = [
     codigo: '67000979',
     correo: 'snhernandez79@ucatolica.edu.co',
     iniciales: 'SH',
-    badgeUrl: '/team/badge-2.png?v=3',
-    foto: '/team/sharick.png?v=3',
+    badgeUrl: '/team/badge-2.png?v=4',
+    foto: '/team/sharick.png?v=4',
   },
   {
     id: 3,
@@ -32,7 +32,8 @@ export const TEAM_MEMBERS: BadgeStudent[] = [
     codigo: '67000991',
     correo: 'lsdiaz91@ucatolica.edu.co',
     iniciales: 'LD',
-    badgeUrl: '/team/badge-3.png?v=3',
+    badgeUrl: '/team/badge-3.png?v=4',
+    foto: '/team/laura.png?v=4',
   },
   {
     id: 4,
@@ -40,8 +41,8 @@ export const TEAM_MEMBERS: BadgeStudent[] = [
     codigo: '67001118',
     correo: 'icsolano18@ucatolica.edu.co',
     iniciales: 'IS',
-    badgeUrl: '/team/badge-4.png?v=3',
-    foto: '/team/ivan.png?v=3',
+    badgeUrl: '/team/badge-4.png?v=4',
+    foto: '/team/ivan.png?v=4',
   },
   {
     id: 5,
@@ -49,8 +50,8 @@ export const TEAM_MEMBERS: BadgeStudent[] = [
     codigo: '67001140',
     correo: 'ccmartinez40@ucatolica.edu.co',
     iniciales: 'CM',
-    badgeUrl: '/team/badge-5.png?v=3',
-    foto: '/team/cristian.png?v=3',
+    badgeUrl: '/team/badge-5.png?v=4',
+    foto: '/team/cristian.png?v=4',
   },
 ];
 
@@ -58,12 +59,12 @@ export function generateBadgeDataUrls(student: BadgeStudent): { front: string; b
   if (student.badgeUrl) {
     return {
       front: student.badgeUrl,
-      back: '/brand/credirisk-card-back.png?v=3',
+      back: '/brand/credirisk-card-back.png?v=4',
     };
   }
 
   return {
-    front: `/team/badge-${student.id}.png?v=3`,
-    back: '/brand/credirisk-card-back.png?v=3',
+    front: `/team/badge-${student.id}.png?v=4`,
+    back: '/brand/credirisk-card-back.png?v=4',
   };
 }

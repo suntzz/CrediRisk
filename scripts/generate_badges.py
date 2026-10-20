@@ -30,6 +30,14 @@ RAW_PHOTOS = {
         "sharpness": 1.30,
         "target_h": 790,
     },
+    "laura": {
+        "src": "/Users/suntz/.gemini/antigravity/brain/e36f2d6e-1258-4fb2-a446-7a568418f166/.user_uploaded/media_1792515182635_d1e76ba0.jpg",
+        "crop": (0, 315, 472, 625),
+        "brightness": 1.04,
+        "contrast": 1.12,
+        "sharpness": 1.38,
+        "target_h": 790,
+    },
     "ivan": {
         "src": "/Users/suntz/.gemini/antigravity/brain/e36f2d6e-1258-4fb2-a446-7a568418f166/.user_uploaded/media_1792463670024_b054e46d.jpg",
         "crop": (0, 100, 768, 750),
@@ -71,7 +79,7 @@ TEAM_MEMBERS = [
         "codigo": "67000991",
         "handle": "@lsdiaz91",
         "iniciales": "LD",
-        "key": None,
+        "key": "laura",
     },
     {
         "id": 4,
