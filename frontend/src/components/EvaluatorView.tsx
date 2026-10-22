@@ -604,14 +604,14 @@ export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
               {/* Classification Pill */}
               <div className="flex items-center justify-center mb-6">
                 {prediction.resultado === 'APTO' ? (
-                  <div className="inline-flex items-center space-x-3 px-6 py-3 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-display font-bold text-base tracking-wide shadow-sm">
+                  <div className="inline-flex items-center space-x-3 px-6 py-3 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-display font-bold text-base shadow-sm">
                     <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                    <span>DICTAMEN: APTO PARA CRÉDITO</span>
+                    <span>Apto para crédito</span>
                   </div>
                 ) : (
-                  <div className="inline-flex items-center space-x-3 px-6 py-3 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-400 font-display font-bold text-base tracking-wide shadow-sm">
+                  <div className="inline-flex items-center space-x-3 px-6 py-3 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-400 font-display font-bold text-base shadow-sm">
                     <XCircle className="w-5 h-5 text-rose-600 dark:text-rose-400" />
-                    <span>DICTAMEN: NO APTO PARA CRÉDITO</span>
+                    <span>No apto para crédito</span>
                   </div>
                 )}
               </div>
@@ -631,13 +631,12 @@ export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
                 <div className="relative pt-6 pb-2">
                   {/* Gauge Track */}
                   <div className="h-3 w-full rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden relative">
+                    {/* El color sigue al dictamen; se rellena con scaleX (transform) en lugar de animar el ancho */}
                     <div 
-                      className={`h-full transition-all duration-700 ${
-                        prediction.resultado === 'APTO' 
-                          ? 'bg-gradient-to-r from-blue-600 via-sky-500 to-emerald-500' 
-                          : 'bg-gradient-to-r from-rose-500 via-amber-500 to-blue-600'
+                      className={`credirisk-gauge-fill h-full w-full origin-left ${
+                        prediction.resultado === 'APTO' ? 'bg-emerald-500' : 'bg-rose-500'
                       }`}
-                      style={{ width: `${Math.min(100, Math.max(0, prediction.probabilidad_apto * 100))}%` }}
+                      style={{ transform: `scaleX(${Math.min(1, Math.max(0, prediction.probabilidad_apto))})` }}
                     />
                   </div>
 
@@ -654,9 +653,6 @@ export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
 
                 <div className="flex justify-between text-[11px] font-mono text-slate-500 dark:text-slate-400">
                   <span>0% (Riesgo Crítico)</span>
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">
-                    Corte Operativo: 50.00%
-                  </span>
                   <span>100% (Perfil Óptimo)</span>
                 </div>
               </div>
@@ -1600,7 +1596,7 @@ export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
                     type="button"
                     onClick={handlePrevStep}
                     disabled={isLoading}
-                    className="inline-flex items-center space-x-1.5 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors"
+                    className="inline-flex items-center space-x-1.5 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800/60 active:scale-[0.98] transition-colors"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
                     <span>Anterior</span>
@@ -1613,7 +1609,7 @@ export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
                   <button
                     type="button"
                     onClick={handleNextStep}
-                    className="inline-flex items-center space-x-1.5 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition-colors"
+                    className="inline-flex items-center space-x-1.5 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm active:scale-[0.98] transition-colors"
                   >
                     <span>Continuar</span>
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -1623,7 +1619,7 @@ export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
                     type="button"
                     onClick={handleExecuteInference}
                     disabled={isLoading}
-                    className="inline-flex items-center space-x-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition-colors disabled:opacity-50"
+                    className="inline-flex items-center space-x-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm active:scale-[0.98] disabled:active:scale-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isLoading ? (
                       <>

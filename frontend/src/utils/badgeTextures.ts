@@ -8,6 +8,8 @@ export interface BadgeStudent {
   foto?: string;
 }
 
+const BASE = import.meta.env.BASE_URL || './';
+
 export const TEAM_MEMBERS: BadgeStudent[] = [
   {
     id: 1,
@@ -15,8 +17,8 @@ export const TEAM_MEMBERS: BadgeStudent[] = [
     codigo: '67001077',
     correo: 'lvguecha77@ucatolica.edu.co',
     iniciales: 'LG',
-    badgeUrl: '/team/badge-1.png?v=5',
-    foto: '/team/leidy.png?v=5',
+    badgeUrl: `${BASE}team/badge-1.png?v=5`,
+    foto: `${BASE}team/leidy.png?v=5`,
   },
   {
     id: 2,
@@ -24,8 +26,8 @@ export const TEAM_MEMBERS: BadgeStudent[] = [
     codigo: '67000979',
     correo: 'snhernandez79@ucatolica.edu.co',
     iniciales: 'SH',
-    badgeUrl: '/team/badge-2.png?v=5',
-    foto: '/team/sharick.png?v=5',
+    badgeUrl: `${BASE}team/badge-2.png?v=5`,
+    foto: `${BASE}team/sharick.png?v=5`,
   },
   {
     id: 3,
@@ -33,8 +35,8 @@ export const TEAM_MEMBERS: BadgeStudent[] = [
     codigo: '67000991',
     correo: 'lsdiaz91@ucatolica.edu.co',
     iniciales: 'LD',
-    badgeUrl: '/team/badge-3.png?v=5',
-    foto: '/team/laura.png?v=5',
+    badgeUrl: `${BASE}team/badge-3.png?v=5`,
+    foto: `${BASE}team/laura.png?v=5`,
   },
   {
     id: 4,
@@ -42,8 +44,8 @@ export const TEAM_MEMBERS: BadgeStudent[] = [
     codigo: '67001118',
     correo: 'icsolano18@ucatolica.edu.co',
     iniciales: 'IS',
-    badgeUrl: '/team/badge-4.png?v=5',
-    foto: '/team/ivan.png?v=5',
+    badgeUrl: `${BASE}team/badge-4.png?v=5`,
+    foto: `${BASE}team/ivan.png?v=5`,
   },
   {
     id: 5,
@@ -51,8 +53,8 @@ export const TEAM_MEMBERS: BadgeStudent[] = [
     codigo: '67001140',
     correo: 'ccmartinez40@ucatolica.edu.co',
     iniciales: 'CM',
-    badgeUrl: '/team/badge-5.png?v=5',
-    foto: '/team/cristian.png?v=5',
+    badgeUrl: `${BASE}team/badge-5.png?v=5`,
+    foto: `${BASE}team/cristian.png?v=5`,
   },
 ];
 
@@ -60,12 +62,12 @@ export function generateBadgeDataUrls(student: BadgeStudent): { front: string; b
   if (student.badgeUrl) {
     return {
       front: student.badgeUrl,
-      back: '/brand/credirisk-card-back.png?v=5',
+      back: `${BASE}brand/credirisk-card-back.png?v=5`,
     };
   }
 
   return {
-    front: `/team/badge-${student.id}.png?v=5`,
-    back: '/brand/credirisk-card-back.png?v=5',
+    front: `${BASE}team/badge-${student.id}.png?v=5`,
+    back: `${BASE}brand/credirisk-card-back.png?v=5`,
   };
 }

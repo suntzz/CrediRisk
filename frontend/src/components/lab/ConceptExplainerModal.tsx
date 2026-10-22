@@ -257,19 +257,24 @@ export const ConceptTrigger: React.FC<ConceptTriggerProps> = ({
 }) => {
   const concept = CONCEPTS_REPOSITORY[conceptKey];
   const displayLabel = label || concept?.title || conceptKey;
+  const conceptName = concept?.title || conceptKey;
+  // Con la etiqueta "?" basta el icono: mostrar ambos duplicaba el signo de interrogación
+  const iconOnly = displayLabel === '?';
 
   return (
     <button
       type="button"
       onClick={() => onOpenExplainer(conceptKey)}
-      className={`inline-flex items-center space-x-1 text-slate-300 hover:text-white group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-1 -mx-1 py-0.5 transition-colors ${className}`}
-      title={`Haz clic para ver la explicación detallada de ${displayLabel}`}
-      aria-label={`Explicación pedagógica de ${displayLabel}`}
+      className={`inline-flex items-center space-x-1 text-xs text-slate-300 hover:text-white group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-1 -mx-1 py-0.5 transition-colors ${className}`}
+      title={`Haz clic para ver la explicación detallada de ${iconOnly ? conceptName : displayLabel}`}
+      aria-label={`Explicación pedagógica de ${iconOnly ? conceptName : displayLabel}`}
     >
-      <span className="underline decoration-blue-500/50 decoration-dotted underline-offset-4 group-hover:decoration-blue-400 group-hover:text-blue-300 transition-colors">
-        {displayLabel}
-      </span>
-      <HelpCircle className="w-3 h-3 text-blue-400/70 group-hover:text-blue-300 shrink-0 transition-colors" />
+      {!iconOnly && (
+        <span className="underline decoration-blue-500/50 decoration-dotted underline-offset-4 group-hover:decoration-blue-400 group-hover:text-blue-300 transition-colors">
+          {displayLabel}
+        </span>
+      )}
+      <HelpCircle className={`${iconOnly ? 'w-3.5 h-3.5' : 'w-3 h-3'} text-blue-400/70 group-hover:text-blue-300 shrink-0 transition-colors`} />
     </button>
   );
 };

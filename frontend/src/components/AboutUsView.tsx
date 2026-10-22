@@ -93,7 +93,7 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
                     intro={true}
                     imageFit="Cover"
                     plainBand={false}
-                    bandImage="/brand/credirisk-lanyard-strap.png"
+                    bandImage={`${import.meta.env.BASE_URL || './'}brand/credirisk-lanyard-strap.png`}
                     frontImage={memberTextures.front}
                     backImage={memberTextures.back}
                     className="w-full h-full cursor-grab active:cursor-grabbing"
@@ -101,14 +101,15 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
                 </div>
 
                 {/* Team Member Credential Info - Clean and seamless below */}
-                <div className="w-full flex flex-col items-center text-center mt-3 px-2">
-                  <h2 className="text-xs sm:text-sm font-bold text-white tracking-tight leading-snug">
+                <div className="w-full flex flex-col items-center text-center mt-3 px-2 xl:px-0">
+                  {/* Reserva dos líneas para el nombre: así código y correo quedan alineados entre columnas */}
+                  <h2 className="min-h-[2.75em] flex items-center justify-center text-xs sm:text-sm font-bold text-white tracking-tight leading-snug">
                     {member.nombre}
                   </h2>
 
                   {/* Code Row */}
                   <div className="mt-2 flex items-center justify-center space-x-1.5 text-xs text-slate-400 font-mono">
-                    <span className="text-slate-500 text-[11px]">Código:</span>
+                    <span className="text-slate-400 text-[11px]">Código:</span>
                     <span className="font-mono font-bold text-sky-300">{member.codigo}</span>
                     <button
                       type="button"
@@ -125,10 +126,10 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
                   </div>
 
                   {/* Email Row */}
-                  <div className="mt-1 flex items-center justify-center space-x-1.5 text-xs text-slate-400 font-mono">
+                  <div className="mt-1 max-w-full flex items-center justify-center space-x-1.5 text-xs text-slate-400 font-mono">
                     <a
                       href={`mailto:${member.correo}`}
-                      className="text-[11px] font-mono text-slate-400 hover:text-sky-300 transition-colors truncate max-w-[190px]"
+                      className="min-w-0 text-[11px] font-mono text-slate-300 hover:text-sky-300 transition-colors truncate"
                       title={`Enviar correo a ${member.correo}`}
                     >
                       {member.correo}
@@ -150,9 +151,9 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
                   {/* Feedback indicator if copied */}
                   <div className="mt-1.5 text-center h-4">
                     {(isCodeCopied || isEmailCopied) && (
-                      <span className="text-[10px] font-mono text-emerald-400 inline-flex items-center space-x-1 animate-pulse">
+                      <span className="text-[10px] font-mono text-emerald-400 inline-flex items-center space-x-1" role="status">
                         <Check className="w-2.5 h-2.5" />
-                        <span>¡Copiado!</span>
+                        <span>Copiado</span>
                       </span>
                     )}
                   </div>
@@ -167,14 +168,14 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
           <button
             type="button"
             onClick={onBackToHome}
-            className="px-4 py-2 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-xs font-semibold backdrop-blur-md transition-colors cursor-pointer"
+            className="active:scale-[0.98] px-4 py-2 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-xs font-semibold backdrop-blur-md transition-colors cursor-pointer"
           >
             Volver al Inicio
           </button>
           <button
             type="button"
             onClick={onOpenEvaluator}
-            className="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-lg shadow-blue-600/30 transition-all cursor-pointer"
+            className="active:scale-[0.98] inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-lg shadow-blue-600/30 transition-all cursor-pointer"
           >
             <FileCheck2 className="w-3.5 h-3.5" />
             <span>Abrir Evaluador de Crédito</span>
@@ -182,7 +183,7 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
           <button
             type="button"
             onClick={onOpenLab}
-            className="inline-flex items-center space-x-2 px-4 py-2 rounded-full border border-sky-500/30 bg-sky-950/60 hover:bg-sky-900/60 text-sky-200 text-xs font-semibold shadow-lg shadow-sky-950/40 transition-all cursor-pointer"
+            className="active:scale-[0.98] inline-flex items-center space-x-2 px-4 py-2 rounded-full border border-sky-500/30 bg-sky-950/60 hover:bg-sky-900/60 text-sky-200 text-xs font-semibold shadow-lg shadow-sky-950/40 transition-all cursor-pointer"
           >
             <FlaskConical className="w-3.5 h-3.5" />
             <span>Explorar Laboratorio</span>

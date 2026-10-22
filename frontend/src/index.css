@@ -95,6 +95,49 @@
   }
 }
 
+/* Entradas locales (modales, pestañas del laboratorio, avisos): el marcado ya usaba estas clases,
+   pero no existía su definición y los elementos aparecían de golpe. La duración la fija `duration-*`. */
+@keyframes credirisk-enter {
+  from {
+    opacity: var(--cr-enter-opacity, 1);
+    transform: scale(var(--cr-enter-scale, 1));
+  }
+}
+
+.animate-in {
+  animation: credirisk-enter var(--tw-duration, 150ms) cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.fade-in {
+  --cr-enter-opacity: 0;
+}
+
+.zoom-in-95 {
+  --cr-enter-scale: 0.95;
+}
+
+/* Medidor del dictamen: se rellena una vez desde 0 hasta la probabilidad calculada */
+@keyframes credirisk-gauge {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.credirisk-gauge-fill {
+  animation: credirisk-gauge 700ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both;
+}
+
+/* El Stepper ya anima la entrada de cada etapa; evita un segundo fundido encima */
+.stepper__pane .animate-in {
+  animation: none;
+}
+
+/* Anillo de foco de teclado coherente con los anillos azules existentes; los controles con estilo propio lo sobrescriben */
+:where(a, button, select, input, textarea, [tabindex]):focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   * {

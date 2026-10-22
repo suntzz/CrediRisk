@@ -50,10 +50,10 @@ export const FigureGalleryView: React.FC<FigureGalleryViewProps> = ({ onSelectFi
             {/* Metadatos */}
             <div>
               <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mb-1">
-                <span className="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 font-bold">
+                <span className="shrink-0 whitespace-nowrap px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 font-bold">
                   FIG. {fig.number}
                 </span>
-                <span className="truncate ml-2">{fig.category}</span>
+                <span className="min-w-0 truncate ml-2">{fig.category}</span>
               </div>
               <h3 className="text-xs font-sans font-bold text-white group-hover:text-blue-300 transition-colors line-clamp-2">
                 {fig.title}

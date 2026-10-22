@@ -29,15 +29,16 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
   };
 
   // Selección de activo optimizado según contraste de superficie
-  let logoSrc = '/brand/credirisk-logo.png';
+  const base = import.meta.env.BASE_URL || './';
+  let logoSrc = `${base}brand/credirisk-logo.png`;
   if (variant === 'light' || (variant === 'auto' && !isDark)) {
-    logoSrc = '/brand/credirisk-logo-light.png';
+    logoSrc = `${base}brand/credirisk-logo-light.png`;
   } else if (variant === 'dark' || (variant === 'auto' && isDark)) {
-    logoSrc = '/brand/credirisk-logo-dark.png';
+    logoSrc = `${base}brand/credirisk-logo-dark.png`;
   } else if (variant === 'mono') {
-    logoSrc = '/brand/credirisk-logo-mono.png';
+    logoSrc = `${base}brand/credirisk-logo-mono.png`;
   } else if (variant === 'white') {
-    logoSrc = '/brand/credirisk-logo-white.png';
+    logoSrc = `${base}brand/credirisk-logo-white.png`;
   }
 
   return (

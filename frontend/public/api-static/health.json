@@ -1,0 +1,14 @@
+{
+  "status": "healthy",
+  "service": "CrediRisk Deep Learning Inference API",
+  "dataset_verified_sha256": "19c5b59ccce6face1a0b828d201605aeb0e70b214f7ed60be2efdf13f47f851d",
+  "threshold": 0.5,
+  "ensemble_available": true,
+  "single_model_available": true,
+  "models_in_ensemble": 3,
+  "architecture_summary": {
+    "m1": "cfg_c_s42 ([64,32,16], ReLU, Adam lr=0.0005, drop=0.15)",
+    "m2": "cfg_b_leaky_s42 ([32,16], LeakyReLU alpha=0.1, Adam lr=0.0005, drop=0.15)",
+    "m3": "cfg_base_s2026 ([64,32,16], ReLU, Adam lr=0.001, drop=0.20)"
+  }
+}

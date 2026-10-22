@@ -29,6 +29,11 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectView }) => {
     <div className="w-full flex flex-col justify-between bg-transparent text-slate-100 relative">
       {/* Area Principal: Composicion Centrada, Limpia y Minimalista */}
       <div className="relative z-10 w-full max-w-4xl mx-auto px-6 py-8 md:py-14 flex-1 flex flex-col items-center justify-center text-center">
+        {/* Velo radial tenue: mejora la lectura del subtítulo sobre el fondo animado sin ocultarlo */}
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-[460px] -z-10 bg-[radial-gradient(ellipse_at_center,rgba(2,6,23,0.7)_0%,rgba(2,6,23,0.35)_45%,transparent_72%)]"
+          aria-hidden="true"
+        />
         {/* Titulo Central con TechText */}
         <div className="flex justify-center items-center w-full my-2">
           <div className="w-[320px] sm:w-[440px] md:w-[500px] h-[75px] sm:h-[95px] md:h-[110px] flex items-center justify-center select-none overflow-visible">
@@ -56,7 +61,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectView }) => {
 
         {/* Subtitulo Claro y Elegante */}
         <p className="mt-4 text-sm sm:text-base md:text-lg text-slate-300 font-sans max-w-xl mx-auto leading-relaxed text-center">
-          Evaluacion cuantitativa del riesgo crediticio mediante ensamble de redes neuronales profundas y analisis probabilistico multivariado.
+          Evaluación cuantitativa del riesgo crediticio mediante ensamble de redes neuronales profundas y análisis probabilístico multivariado.
         </p>
 
         {/* Botones de Accion Centrados (estilo minimalista de la foto) */}
@@ -67,14 +72,14 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectView }) => {
             onClick={() => onSelectView('evaluator')}
             onMouseEnter={() => showOption('evaluator')}
             onMouseLeave={() => setHoveredOption(null)}
-            className={`relative group px-7 py-3.5 rounded-full text-sm font-semibold transition-all duration-300 flex items-center space-x-2.5 cursor-pointer ${
+            className={`relative group px-7 py-3.5 rounded-full text-sm font-semibold transition-all duration-300 flex items-center space-x-2.5 cursor-pointer active:scale-100 ${
               hoveredOption === 'evaluator'
                 ? 'bg-white text-slate-950 shadow-[0_0_35px_rgba(56,189,248,0.55)] scale-105'
                 : 'bg-white text-slate-950 hover:bg-slate-100 shadow-xl'
             }`}
           >
             <FileCheck2 className="w-4 h-4 text-blue-600" />
-            <span>Abrir evaluador de credito</span>
+            <span>Abrir evaluador de crédito</span>
             <ArrowRight className="w-4 h-4 text-slate-800 group-hover:translate-x-1 transition-transform" />
           </button>
 
@@ -84,7 +89,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectView }) => {
             onClick={() => onSelectView('lab')}
             onMouseEnter={() => showOption('lab')}
             onMouseLeave={() => setHoveredOption(null)}
-            className={`relative group px-7 py-3.5 rounded-full text-sm font-semibold transition-all duration-300 flex items-center space-x-2.5 backdrop-blur-xl border cursor-pointer ${
+            className={`relative group px-7 py-3.5 rounded-full text-sm font-semibold transition-all duration-300 flex items-center space-x-2.5 backdrop-blur-xl border cursor-pointer active:scale-100 ${
               hoveredOption === 'lab'
                 ? 'bg-blue-950/80 text-white border-blue-400/80 shadow-[0_0_35px_rgba(59,130,246,0.45)] scale-105'
                 : 'bg-slate-900/70 text-slate-200 border-white/15 hover:bg-slate-800/80 hover:text-white shadow-xl'
@@ -117,7 +122,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectView }) => {
               
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
                   <span className="text-xs font-mono font-semibold text-blue-400 uppercase tracking-wider">
                     Inferencia en Tiempo Real
                   </span>
@@ -128,11 +133,11 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectView }) => {
               </div>
 
               <h3 className="text-base font-bold text-white mb-1.5">
-                Evaluador de Credito Financiero
+                Evaluador de Crédito Financiero
               </h3>
 
               <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mb-4">
-                Introduce los 23 parametros financieros y de endeudamiento del solicitante para calcular la probabilidad objetiva de cumplimiento bajo el umbral calibrado del modelo (0.0700).
+                Introduce los 23 parámetros financieros y de endeudamiento del solicitante para calcular la probabilidad de cumplimiento frente al umbral de decisión del modelo (0.50).
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-3 border-t border-slate-800/80 text-xs text-slate-300">
@@ -142,7 +147,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectView }) => {
                 </div>
                 <div className="flex items-center space-x-2">
                   <Activity className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                  <span>Diagnostico en vivo</span>
+                  <span>Diagnóstico en vivo</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <FileCheck2 className="w-3.5 h-3.5 text-sky-400 shrink-0" />
@@ -172,9 +177,9 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectView }) => {
 
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-2">
-                  <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
+                  <span className="w-2 h-2 rounded-full bg-sky-400" />
                   <span className="text-xs font-mono font-semibold text-sky-400 uppercase tracking-wider">
-                    Evidencia Empirica de Modelos
+                    Evidencia Empírica de Modelos
                   </span>
                 </div>
                 <span className="text-xs font-mono text-slate-400">
@@ -183,11 +188,11 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectView }) => {
               </div>
 
               <h3 className="text-base font-bold text-white mb-1.5">
-                Laboratorio del Modelo y Metricas
+                Laboratorio del Modelo y Métricas
               </h3>
 
               <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mb-4">
-                Inspecciona la arquitectura de las 3 redes neuronales profundas (MLP), la matriz de confusion sobre el conjunto Test congelado (49,650 registros) y las curvas ROC-AUC.
+                Inspecciona la arquitectura de las 3 redes neuronales profundas (MLP), la matriz de confusión sobre el conjunto Test congelado (49,650 registros) y las curvas ROC-AUC.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-3 border-t border-slate-800/80 text-xs text-slate-300">
@@ -197,7 +202,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectView }) => {
                 </div>
                 <div className="flex items-center space-x-2">
                   <Activity className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                  <span>Matriz de Confusion</span>
+                  <span>Matriz de Confusión</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <FlaskConical className="w-3.5 h-3.5 text-cyan-400 shrink-0" />

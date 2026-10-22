@@ -420,8 +420,10 @@ export const ModelLabView: React.FC<ModelLabViewProps> = ({
                     <span className="text-[11px] text-slate-400">Brier / LogLoss</span>
                     <ConceptTrigger conceptKey="brier_score" label="?" onOpenExplainer={setSelectedConcept} />
                   </div>
-                  <div className="text-xl font-bold font-mono text-white">
-                    0.205 / 0.596
+                  {/* Brier como valor principal y LogLoss secundario: el par completo no cabía en una línea */}
+                  <div className="text-xl font-bold font-mono text-white whitespace-nowrap">
+                    0.205
+                    <span className="ml-1 text-sm font-semibold text-slate-400">/ 0.596</span>
                   </div>
                 </div>
                 <div className="mt-2 pt-2 border-t border-white/5 text-[10px] text-slate-400 font-mono">
