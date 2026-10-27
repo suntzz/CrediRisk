@@ -821,7 +821,7 @@ export const ModelLabView: React.FC<ModelLabViewProps> = ({
                 className="rounded-xl border border-white/10 bg-black/60 p-4 flex items-center justify-center cursor-pointer hover:border-blue-500/50 transition-all group"
               >
                 <img 
-                  src="/docs/images/06_arquitectura_ensamble_final.png" 
+                  src={DOC_FIGURES[5].filename} 
                   alt="Arquitectura del Ensamble Final"
                   className="max-h-72 w-auto object-contain group-hover:scale-[1.02] transition-transform duration-300"
                 />

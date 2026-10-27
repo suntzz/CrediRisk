@@ -2,35 +2,103 @@
 Basado exclusivamente en los resultados numéricos consolidados en reports/.
 No carga datos de prueba (X_test, y_test) ni ejecuta inferencias o modelos.
 Sin emojis.
+
+Temas:
+  light (por defecto) -> docs/images/, gráficas claras para el README.
+  dark                -> frontend/public/docs/images/, paleta oscura de CrediRisk con fondo
+                         transparente para integrarse en la galería del Laboratorio.
+
+Uso: python docs/generate_doc_charts.py [--theme light|dark] [--out DIR]
 """
+import argparse
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
 from pathlib import Path
 
-out_dir = Path("/Users/suntz/Documents/Deep/docs/images")
-out_dir.mkdir(parents=True, exist_ok=True)
+ROOT = Path(__file__).resolve().parent.parent
 
-# Paleta corporativa sobria
-C_NAVY = "#1E3D59"
-C_STEEL = "#17B890"
-C_SLATE = "#5C6B73"
-C_LIGHT = "#E8ECEF"
-C_ACCENT = "#E76F51"
-C_BLUE = "#2B580C"
-C_DARK = "#2B2D42"
-C_CORAL = "#D1495B"
+# Colores por tema. El tema claro conserva exactamente los valores originales.
+THEMES = {
+    "light": {
+        "out": ROOT / "docs" / "images",
+        "transparent": False,
+        "navy": "#1E3D59", "steel": "#17B890", "light": "#E8ECEF", "dark": "#2B2D42", "coral": "#D1495B",
+        "edge": "#CCCCCC", "grid": "#E5E5E5", "tick": None,
+        "legend_face": "white", "legend_edge": "#E0E0E0", "legend_text": None,
+        "muted": "#888888", "subtle": "#555555", "note": "#444444",
+        "acc": "#2C3E50", "f1": "#3498DB",
+        "cmap": "Blues", "cm_text_hi": "white", "cm_text_lo": "#1A252F", "axis_label": None,
+        "box_text": "white", "box_input": "#2B2D42", "box_output": "#17B890",
+        "net": ["#1E3D59", "#2C5D63", "#486581"],
+        "pipe": ["#34495E", "#2980B9", "#16A085", "#27AE60"],
+        "phase": ["#1E3D59", "#28527A", "#17B890"],
+        "arrow": "#888888", "arrow_pipe": "#7F8C8D", "arrow_phase": "#999999",
+        "note_face": "#E8ECEF", "note_edge": "#CCCCCC", "note_edge_pipe": "#BDC3C7",
+    },
+    "dark": {
+        "out": ROOT / "frontend" / "public" / "docs" / "images",
+        "transparent": True,
+        # Tokens de la interfaz: azul de marca, cian de acento y escala slate
+        "navy": "#3B82F6", "steel": "#38BDF8", "light": "#111A2E", "dark": "#F1F5F9", "coral": "#38BDF8",
+        "edge": "#334155", "grid": "#1E293B", "tick": "#94A3B8",
+        "legend_face": "#0F172A", "legend_edge": "#334155", "legend_text": "#CBD5E1",
+        "muted": "#64748B", "subtle": "#94A3B8", "note": "#CBD5E1",
+        "acc": "#3B82F6", "f1": "#38BDF8",
+        "cmap": LinearSegmentedColormap.from_list("credirisk_blue", ["#0F1A2E", "#1E3A8A", "#2563EB"]),
+        "cm_text_hi": "#F8FAFC", "cm_text_lo": "#F8FAFC", "axis_label": "#CBD5E1",
+        "box_text": "#F8FAFC", "box_input": "#1E293B", "box_output": "#0369A1",
+        "net": ["#2563EB", "#1D4ED8", "#1E40AF"],
+        "pipe": ["#1E293B", "#1E3A8A", "#1D4ED8", "#0369A1"],
+        "phase": ["#1E3A8A", "#1D4ED8", "#0369A1"],
+        "arrow": "#64748B", "arrow_pipe": "#64748B", "arrow_phase": "#64748B",
+        "note_face": "#111A2E", "note_edge": "#334155", "note_edge_pipe": "#334155",
+    },
+}
 
-plt.rcParams.update({
-    "font.sans-serif": "Helvetica",
-    "font.family": "sans-serif",
-    "axes.edgecolor": "#CCCCCC",
-    "axes.linewidth": 0.8,
-    "grid.color": "#E5E5E5",
-    "grid.linestyle": "--",
-    "grid.linewidth": 0.6,
-})
+T = THEMES["light"]
+out_dir = T["out"]
+
+# Paleta corporativa sobria (se reasigna según el tema en apply_theme)
+C_NAVY = T["navy"]
+C_STEEL = T["steel"]
+C_LIGHT = T["light"]
+C_DARK = T["dark"]
+C_CORAL = T["coral"]
+
+
+def apply_theme(name, out=None):
+    global T, out_dir, C_NAVY, C_STEEL, C_LIGHT, C_DARK, C_CORAL
+    T = THEMES[name]
+    out_dir = Path(out) if out else T["out"]
+    out_dir.mkdir(parents=True, exist_ok=True)
+    C_NAVY, C_STEEL, C_LIGHT, C_DARK, C_CORAL = T["navy"], T["steel"], T["light"], T["dark"], T["coral"]
+
+    plt.rcdefaults()
+    params = {
+        "font.sans-serif": "Helvetica",
+        "font.family": "sans-serif",
+        "axes.edgecolor": T["edge"],
+        "axes.linewidth": 0.8,
+        "grid.color": T["grid"],
+        "grid.linestyle": "--",
+        "grid.linewidth": 0.6,
+    }
+    if T["transparent"]:
+        params.update({
+            "savefig.transparent": True,
+            "axes.facecolor": "none",
+            "figure.facecolor": "none",
+            "text.color": T["dark"],
+            "axes.labelcolor": T["axis_label"],
+            "axes.titlecolor": T["dark"],
+            "xtick.color": T["tick"],
+            "ytick.color": T["tick"],
+            "legend.labelcolor": T["legend_text"],
+        })
+    plt.rcParams.update(params)
 
 
 # -----------------------------------------------------------------------------
@@ -62,7 +130,7 @@ def plot_auc_evolution():
     ax.set_xticks(x)
     ax.set_xticklabels(models, fontsize=9)
     ax.set_ylim(0.730, 0.760)
-    ax.legend(frameon=True, facecolor="white", edgecolor="#E0E0E0", fontsize=9, loc="upper left")
+    ax.legend(frameon=True, facecolor=T["legend_face"], edgecolor=T["legend_edge"], fontsize=9, loc="upper left")
     ax.grid(axis="y", zorder=0)
 
     # Anotaciones numéricas
@@ -78,7 +146,7 @@ def plot_auc_evolution():
                         xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=8, color=C_STEEL, fontweight="bold")
         else:
             ax.annotate("No evaluado", xy=(rect.get_x() + rect.get_width()/2, 0.732),
-                        xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=7.5, color="#888888", style="italic")
+                        xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=7.5, color=T["muted"], style="italic")
 
     fig.tight_layout()
     fig.savefig(out_dir / "01_evolucion_roc_auc.png")
@@ -147,25 +215,25 @@ def plot_classification_metrics():
     x = np.arange(len(models))
     w = 0.35
 
-    r1 = ax.bar(x - w/2, acc, w, label="Accuracy (%)", color="#2C3E50", alpha=0.9)
-    r2 = ax.bar(x + w/2, f1, w, label="F1-Score (x100)", color="#3498DB", alpha=0.9)
+    r1 = ax.bar(x - w/2, acc, w, label="Accuracy (%)", color=T["acc"], alpha=0.9)
+    r2 = ax.bar(x + w/2, f1, w, label="F1-Score (x100)", color=T["f1"], alpha=0.9)
 
     ax.set_ylabel("Porcentaje (%)", fontsize=10, fontweight="bold", color=C_DARK)
     ax.set_title("Exactitud (Accuracy) y F1-Score en Test (Umbral = 0.50)", fontsize=12, fontweight="bold", color=C_DARK, pad=12)
     ax.set_xticks(x)
     ax.set_xticklabels(models, fontsize=9)
     ax.set_ylim(64.0, 70.0)
-    ax.legend(frameon=True, facecolor="white", edgecolor="#E0E0E0", fontsize=9, loc="lower right")
+    ax.legend(frameon=True, facecolor=T["legend_face"], edgecolor=T["legend_edge"], fontsize=9, loc="lower right")
     ax.grid(axis="y", zorder=0)
 
     for r in r1:
         h = r.get_height()
         ax.annotate(f"{h:.2f}%", xy=(r.get_x() + r.get_width()/2, h),
-                    xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=8, color="#2C3E50", fontweight="bold")
+                    xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=8, color=T["acc"], fontweight="bold")
     for r in r2:
         h = r.get_height()
         ax.annotate(f"{h/100:.4f}", xy=(r.get_x() + r.get_width()/2, h),
-                    xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=8, color="#3498DB", fontweight="bold")
+                    xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=8, color=T["f1"], fontweight="bold")
 
     fig.tight_layout()
     fig.savefig(out_dir / "03_clasificacion_acc_f1.png")
@@ -184,7 +252,7 @@ def plot_confusion_matrix_final():
                    [1248, 2476]])
     total = 7448
 
-    im = ax.imshow(cm, interpolation="nearest", cmap="Blues")
+    im = ax.imshow(cm, interpolation="nearest", cmap=T["cmap"])
     cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
     cbar.ax.tick_params(labelsize=8)
 
@@ -206,7 +274,7 @@ def plot_confusion_matrix_final():
 
     for i in range(2):
         for j in range(2):
-            color = "white" if cm[i, j] > 2000 else "#1A252F"
+            color = T["cm_text_hi"] if cm[i, j] > 2000 else T["cm_text_lo"]
             ax.text(j, i, labels[i][j], ha="center", va="center", color=color, fontsize=10, fontweight="bold")
 
     fig.tight_layout()
@@ -275,49 +343,49 @@ def plot_architecture_diagram():
     ax.text(5, 6.6, "Arquitectura del Ensamble Final: Ensemble_Top3_Diverso",
             ha="center", va="center", fontsize=13, fontweight="bold", color=C_DARK)
     ax.text(5, 6.2, "Ponderación Simple Equiponderada: p_final = (p1 + p2 + p3) / 3",
-            ha="center", va="center", fontsize=9.5, color="#555555", style="italic")
+            ha="center", va="center", fontsize=9.5, color=T["subtle"], style="italic")
 
     # Caja Entrada Común
     ax.text(1.2, 3.5, "Entrada Comun\n44 Caracteristicas\nNormalizadas\n(preprocessor.joblib)",
-            ha="center", va="center", fontsize=9, fontweight="bold", color="white",
-            bbox=dict(boxstyle="round,pad=0.6", facecolor=C_DARK, edgecolor="none"))
+            ha="center", va="center", fontsize=9, fontweight="bold", color=T["box_text"],
+            bbox=dict(boxstyle="round,pad=0.6", facecolor=T["box_input"], edgecolor="none"))
 
     # Bloques de Redes
     networks = [
         ("Modelo 1: cfg_c_s42.keras",
          "Topologia: 44 -> 64 -> 32 -> 16 -> 1\nActivacion: ReLU | Regularizacion: Dropout 0.15\nOptimizador: Adam (lr=0.0005) | Semilla: 42\nParametros: 5,505 | Peso: 1/3 (33.3%)",
-         5.0, C_NAVY),
+         5.0, T["net"][0]),
         ("Modelo 2: cfg_b_leaky_s42.keras",
          "Topologia: 44 -> 32 -> 16 -> 1\nActivacion: LeakyReLU (alpha=0.1) | Dropout 0.15\nOptimizador: Adam (lr=0.0005) | Semilla: 42\nParametros: 1,985 | Peso: 1/3 (33.3%)",
-         3.5, "#2C5D63"),
+         3.5, T["net"][1]),
         ("Modelo 3: cfg_base_s2026.keras",
          "Topologia: 44 -> 64 -> 32 -> 16 -> 1\nActivacion: ReLU | Regularizacion: Dropout 0.20\nOptimizador: Adam (lr=0.0010) | Semilla: 2026\nParametros: 5,505 | Peso: 1/3 (33.3%)",
-         2.0, "#486581"),
+         2.0, T["net"][2]),
     ]
 
     for title, desc, y, color in networks:
         # Flecha desde entrada
         ax.annotate("", xy=(3.2, y), xytext=(2.3, 3.5),
-                    arrowprops=dict(arrowstyle="->", color="#888888", lw=1.2))
+                    arrowprops=dict(arrowstyle="->", color=T["arrow"], lw=1.2))
 
         # Caja de red
         text_full = f"{title}\n{desc}"
-        ax.text(5.2, y, text_full, ha="center", va="center", fontsize=8.5, color="white",
+        ax.text(5.2, y, text_full, ha="center", va="center", fontsize=8.5, color=T["box_text"],
                 bbox=dict(boxstyle="round,pad=0.5", facecolor=color, edgecolor="none"))
 
         # Flecha hacia salida
         ax.annotate("", xy=(7.8, 3.5), xytext=(7.2, y),
-                    arrowprops=dict(arrowstyle="->", color="#888888", lw=1.2))
+                    arrowprops=dict(arrowstyle="->", color=T["arrow"], lw=1.2))
 
     # Caja Salida Ensamble
     ax.text(8.8, 3.5, "Prediccion Final\np_final in (0, 1)\n\nUmbral = 0.50\nApto / No Apto",
-            ha="center", va="center", fontsize=9, fontweight="bold", color="white",
-            bbox=dict(boxstyle="round,pad=0.6", facecolor=C_STEEL, edgecolor="none"))
+            ha="center", va="center", fontsize=9, fontweight="bold", color=T["box_text"],
+            bbox=dict(boxstyle="round,pad=0.6", facecolor=T["box_output"], edgecolor="none"))
 
     # Resumen inferior
     ax.text(5, 0.6, "Total de parametros entrenables combinados: 12,995 | Evaluacion Test: AUC = 0.74482, Brier = 0.2050",
-            ha="center", va="center", fontsize=8.5, color="#444444",
-            bbox=dict(boxstyle="square,pad=0.4", facecolor=C_LIGHT, edgecolor="#CCCCCC"))
+            ha="center", va="center", fontsize=8.5, color=T["note"],
+            bbox=dict(boxstyle="square,pad=0.4", facecolor=T["note_face"], edgecolor=T["note_edge"]))
 
     fig.tight_layout()
     fig.savefig(out_dir / "06_arquitectura_ensamble_final.png")
@@ -337,23 +405,23 @@ def plot_data_pipeline():
             ha="center", va="center", fontsize=12, fontweight="bold", color=C_DARK)
 
     steps = [
-        ("Dataset Fuente\n49,650 registros\n26 columnas\n(UTF-8 BOM)", 1.2, "#34495E"),
-        ("Particion Estratificada\nTrain: 70% (34,755)\nVal: 15% (7,447)\nTest: 15% (7,448)\n(Semilla 42)", 3.4, "#2980B9"),
-        ("Transformaciones\n(Ajuste solo con Train)\nLog1p + Clipping p1-p99\nImputacion mediana/moda\nIndicadores de vacios\nOne-Hot Encoding", 5.8, "#16A085"),
-        ("Estandarizacion\nStandardScaler\n(Media/Varianza de Train)\n\n44 Caracteristicas\nResultantes", 8.2, "#27AE60"),
+        ("Dataset Fuente\n49,650 registros\n26 columnas\n(UTF-8 BOM)", 1.2, T["pipe"][0]),
+        ("Particion Estratificada\nTrain: 70% (34,755)\nVal: 15% (7,447)\nTest: 15% (7,448)\n(Semilla 42)", 3.4, T["pipe"][1]),
+        ("Transformaciones\n(Ajuste solo con Train)\nLog1p + Clipping p1-p99\nImputacion mediana/moda\nIndicadores de vacios\nOne-Hot Encoding", 5.8, T["pipe"][2]),
+        ("Estandarizacion\nStandardScaler\n(Media/Varianza de Train)\n\n44 Caracteristicas\nResultantes", 8.2, T["pipe"][3]),
     ]
 
     for i, (text, x, color) in enumerate(steps):
-        ax.text(x, 2.3, text, ha="center", va="center", fontsize=8.2, color="white",
+        ax.text(x, 2.3, text, ha="center", va="center", fontsize=8.2, color=T["box_text"],
                 bbox=dict(boxstyle="round,pad=0.5", facecolor=color, edgecolor="none"))
         if i < len(steps) - 1:
             next_x = steps[i+1][1]
             ax.annotate("", xy=(next_x - 0.9, 2.3), xytext=(x + 0.9, 2.3),
-                        arrowprops=dict(arrowstyle="->", color="#7F8C8D", lw=1.5))
+                        arrowprops=dict(arrowstyle="->", color=T["arrow_pipe"], lw=1.5))
 
     ax.text(5, 0.7, "Exclusiones estrictas: id_solicitud (identificador) e INCUMPLIO_PAGO (auditoria/complemento de objetivo)",
-            ha="center", va="center", fontsize=8.5, color=C_DARK, style="italic",
-            bbox=dict(boxstyle="round,pad=0.3", facecolor=C_LIGHT, edgecolor="#BDC3C7"))
+            ha="center", va="center", fontsize=8.5, color=T["note"] if T["transparent"] else C_DARK, style="italic",
+            bbox=dict(boxstyle="round,pad=0.3", facecolor=T["note_face"], edgecolor=T["note_edge_pipe"]))
 
     fig.tight_layout()
     fig.savefig(out_dir / "07_pipeline_datos.png")
@@ -373,17 +441,17 @@ def plot_phases_flow():
             ha="center", va="center", fontsize=12, fontweight="bold", color=C_DARK)
 
     phases = [
-        ("Fase 1: Linea Base y Exploracion\n\n* 37 experimentos sistematicos\n* Busqueda de hiperparametros\n* Tasa de aprendizaje eta = 0.0005\n* Dropout 0.15 y BatchNorm descartado\n* Mejor red indiv.: Val AUC = 0.75225\n* Ensamble Top-3: Val AUC = 0.75382", 1.8, C_NAVY),
-        ("Fase 2: Regularizacion y Ensamble\n\n* Estudio de ablacion (44 features optimas)\n* Incorporacion de L2 = 1e-4\n* Récord individual: Val AUC = 0.75250\n* Evaluacion multi-semilla (5 semillas)\n* Descorrelacion con LeakyReLU (r = 0.965)\n* Congelamiento de Ensemble_Top3", 5.0, "#28527A"),
-        ("Fase 3: Nuevas Activaciones y Cierre\n\n* 12 experimentos focalizados\n* Activaciones suaves GELU y ELU\n* P3_06 ELU: sigma AUC = 0.00030\n* Calibracion optimizada (Brier = 0.2017)\n* Ensambles 60/20/20 y 70/15/15\n* Evaluacion final de Test y auditoria", 8.2, C_STEEL),
+        ("Fase 1: Linea Base y Exploracion\n\n* 37 experimentos sistematicos\n* Busqueda de hiperparametros\n* Tasa de aprendizaje eta = 0.0005\n* Dropout 0.15 y BatchNorm descartado\n* Mejor red indiv.: Val AUC = 0.75225\n* Ensamble Top-3: Val AUC = 0.75382", 1.8, T["phase"][0]),
+        ("Fase 2: Regularizacion y Ensamble\n\n* Estudio de ablacion (44 features optimas)\n* Incorporacion de L2 = 1e-4\n* Récord individual: Val AUC = 0.75250\n* Evaluacion multi-semilla (5 semillas)\n* Descorrelacion con LeakyReLU (r = 0.965)\n* Congelamiento de Ensemble_Top3", 5.0, T["phase"][1]),
+        ("Fase 3: Nuevas Activaciones y Cierre\n\n* 12 experimentos focalizados\n* Activaciones suaves GELU y ELU\n* P3_06 ELU: sigma AUC = 0.00030\n* Calibracion optimizada (Brier = 0.2017)\n* Ensambles 60/20/20 y 70/15/15\n* Evaluacion final de Test y auditoria", 8.2, T["phase"][2]),
     ]
 
     for i, (text, x, color) in enumerate(phases):
-        ax.text(x, 2.3, text, ha="center", va="center", fontsize=8, color="white",
+        ax.text(x, 2.3, text, ha="center", va="center", fontsize=8, color=T["box_text"],
                 bbox=dict(boxstyle="round,pad=0.5", facecolor=color, edgecolor="none"))
         if i < len(phases) - 1:
             ax.annotate("", xy=(phases[i+1][1] - 1.35, 2.3), xytext=(x + 1.35, 2.3),
-                        arrowprops=dict(arrowstyle="->", color="#999999", lw=1.5))
+                        arrowprops=dict(arrowstyle="->", color=T["arrow_phase"], lw=1.5))
 
     fig.tight_layout()
     fig.savefig(out_dir / "08_flujo_fases_experimentales.png")
@@ -391,7 +459,12 @@ def plot_phases_flow():
 
 
 if __name__ == "__main__":
-    print("Generando graficas tecnicas estaticas en docs/images/...")
+    parser = argparse.ArgumentParser(description="Genera las graficas de documentacion de CrediRisk.")
+    parser.add_argument("--theme", choices=sorted(THEMES), default="light")
+    parser.add_argument("--out", default=None, help="Directorio de salida (por defecto depende del tema)")
+    args = parser.parse_args()
+    apply_theme(args.theme, args.out)
+    print(f"Generando graficas tecnicas estaticas (tema {args.theme}) en {out_dir}...")
     plot_auc_evolution()
     plot_probabilistic_quality()
     plot_classification_metrics()
