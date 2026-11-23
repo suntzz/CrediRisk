@@ -30,3 +30,8 @@ Thumbs.db
 # Entregas y zips
 entrega/
 *.zip
+
+# Predicciones fuera de pliegue y logs de corridas
+artifacts/cv/*.npz
+artifacts/v2/*.npz
+*.log
