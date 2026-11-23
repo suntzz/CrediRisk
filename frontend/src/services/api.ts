@@ -1,197 +1,33 @@
 import type { ApplicantFormData, HealthStatus, PredictionResult, RiskFactor, SystemMetrics } from '../types';
+import { predictV2, type ModelBundleV2 } from './modelV2';
 
 const API_BASE = '/api';
 const STATIC_BASE = `${import.meta.env.BASE_URL || './'}api-static`;
 
-interface DenseLayerSpec {
-  type: 'Dense';
-  activation: 'relu' | 'linear' | 'sigmoid';
-  W: number[][];
-  b: number[];
-}
+// La inferencia del modelo v2 vive en ./modelV2.ts (ver scripts/export_static_api_v2.py).
 
-interface LeakyReLULayerSpec {
-  type: 'LeakyReLU';
-  negative_slope: number;
-}
+let cachedBundleV2: ModelBundleV2 | null = null;
 
-type LayerSpec = DenseLayerSpec | LeakyReLULayerSpec;
-
-interface ModelBundle {
-  threshold: number;
-  product_threshold_policy?: {
-    default_threshold: number;
-    thresholds: Record<string, { threshold: number }>;
-    unsupported_products?: Record<string, string>;
-  };
-  preprocessor: {
-    drop_cols: string[];
-    target: string;
-    cat_cols: string[];
-    flag_cols: string[];
-    skew_cols: string[];
-    signed_log_cols: string[];
-    rare_to_otro: Record<string, string[]>;
-    num_cols: string[];
-    dummy_cols: string[];
-    lo: Record<string, number>;
-    hi: Record<string, number>;
-    median: Record<string, number>;
-    scaler_mean: number[];
-    scaler_scale: number[];
-  };
-  ensemble_models: LayerSpec[][];
-  single_model: LayerSpec[];
-  hybrid?: {
-    hgb_weight: number;
-    hist_gradient_boosting: {
-      baseline: number;
-      // [isLeaf, featureIndex, threshold, leftIndex, rightIndex, missingGoLeft, leafValue]
-      trees: number[][][];
-    };
-  };
-}
-
-let cachedBundle: ModelBundle | null = null;
-
-async function getModelBundle(): Promise<ModelBundle> {
-  if (cachedBundle) return cachedBundle;
-  const res = await fetch(`${STATIC_BASE}/model_bundle.json`);
+async function getModelBundleV2(): Promise<ModelBundleV2> {
+  if (cachedBundleV2) return cachedBundleV2;
+  const res = await fetch(`${STATIC_BASE}/model_bundle_v2.json`);
   if (!res.ok) {
-    throw new Error(`No se pudo cargar el modelo estático (${res.status})`);
+    throw new Error(`No se pudo cargar el modelo v2 (${res.status})`);
   }
-  cachedBundle = (await res.json()) as ModelBundle;
-  return cachedBundle;
+  cachedBundleV2 = (await res.json()) as ModelBundleV2;
+  return cachedBundleV2;
 }
 
-function preprocessApplicant(data: ApplicantFormData, pre: ModelBundle['preprocessor']): number[] {
-  const rec: Record<string, unknown> = { ...data };
-
-  // 1. Reemplazar categorías raras por "Otro"
-  const catValues: Record<string, string> = {};
-  for (const col of pre.cat_cols) {
-    let val = String(rec[col] ?? '');
-    const rares = pre.rare_to_otro[col];
-    if (rares && rares.includes(val)) {
-      val = 'Otro';
-    }
-    catValues[col] = val;
-  }
-
-  // 2. Banderas _nan
-  const nanFlags: Record<string, number> = {};
-  for (const col of pre.flag_cols) {
-    const raw = rec[col];
-    const isMissing = raw === null || raw === undefined || raw === '' || Number.isNaN(Number(raw));
-    nanFlags[`${col}_nan`] = isMissing ? 1.0 : 0.0;
-  }
-
-  // 3. Columnas numéricas con clip [lo, hi], log1p / signed_log y mediana para NaN
-  const skewSet = new Set(pre.skew_cols);
-  const signedLogSet = new Set(pre.signed_log_cols);
-  const numVector: number[] = [];
-
-  for (const col of pre.num_cols) {
-    if (col.endsWith('_nan')) {
-      numVector.push(nanFlags[col] ?? 0.0);
-      continue;
-    }
-    const raw = rec[col];
-    const isMissing = raw === null || raw === undefined || raw === '' || Number.isNaN(Number(raw));
-    let val: number;
-    if (isMissing) {
-      val = pre.median[col] ?? 0.0;
-    } else {
-      val = Number(raw);
-      const lo = pre.lo[col];
-      const hi = pre.hi[col];
-      if (lo !== undefined && val < lo) val = lo;
-      if (hi !== undefined && val > hi) val = hi;
-    }
-
-    if (!isMissing) {
-      if (skewSet.has(col)) {
-        val = Math.log1p(Math.max(0, val));
-      }
-      if (signedLogSet.has(col)) {
-        val = Math.sign(val) * Math.log1p(Math.abs(val));
-      }
-    } else {
-      // Si era NaN, en pandas clip/log1p mantienen NaN y luego fillna(self.median) asigna self.median directo
-      val = pre.median[col] ?? 0.0;
-    }
-
-    numVector.push(val);
-  }
-
-  // 4. Variables dummy one-hot en el mismo orden de pre.dummy_cols
-  const dummyVector: number[] = [];
-  for (const dCol of pre.dummy_cols) {
-    let matched = 0.0;
-    for (const catCol of pre.cat_cols) {
-      const prefix = `${catCol}_`;
-      if (dCol.startsWith(prefix)) {
-        const expectedCat = dCol.slice(prefix.length);
-        if (catValues[catCol] === expectedCat) {
-          matched = 1.0;
-        }
-        break;
-      }
-    }
-    dummyVector.push(matched);
-  }
-
-  // 5. Escalado estándar (StandardScaler)
-  const rawFeatures = [...numVector, ...dummyVector];
-  return rawFeatures.map((v, i) => (v - pre.scaler_mean[i]) / pre.scaler_scale[i]);
+export interface ComparacionV2 {
+  resultados: { nombre: string; viejo: number; nuevo: number; formato: 'auc' | 'pct_menor' | 'menor' }[];
+  mejora_cv: { diff: number; ci_low: number; ci_high: number };
+  cambios: [string, string, string][];
 }
 
-function forwardPass(xInput: number[], layers: LayerSpec[]): number {
-  let a = [...xInput];
-  for (const layer of layers) {
-    if (layer.type === 'Dense') {
-      const outDim = layer.b.length;
-      const next: number[] = new Array(outDim);
-      for (let j = 0; j < outDim; j++) {
-        let sum = layer.b[j];
-        for (let i = 0; i < a.length; i++) {
-          sum += a[i] * layer.W[i][j];
-        }
-        if (layer.activation === 'relu') {
-          next[j] = sum > 0 ? sum : 0;
-        } else if (layer.activation === 'sigmoid') {
-          next[j] = 1 / (1 + Math.exp(-sum));
-        } else {
-          next[j] = sum;
-        }
-      }
-      a = next;
-    } else if (layer.type === 'LeakyReLU') {
-      const slope = layer.negative_slope;
-      a = a.map((v) => (v > 0 ? v : slope * v));
-    }
-  }
-  return a[0] ?? 0.5;
-}
-
-function histGradientBoostingForward(x: number[], model: NonNullable<ModelBundle['hybrid']>['hist_gradient_boosting']): number {
-  let raw = model.baseline;
-  for (const tree of model.trees) {
-    let nodeIndex = 0;
-    while (true) {
-      const node = tree[nodeIndex];
-      if (!node) break;
-      const [isLeaf, featureIndex, threshold, leftIndex, rightIndex, missingGoLeft, leafValue] = node;
-      if (isLeaf === 1) {
-        raw += leafValue;
-        break;
-      }
-      const value = x[featureIndex];
-      const goLeft = Number.isNaN(value) ? missingGoLeft === 1 : value <= threshold;
-      nodeIndex = goLeft ? leftIndex : rightIndex;
-    }
-  }
-  return 1 / (1 + Math.exp(-raw));
+export async function fetchComparacionV2(): Promise<ComparacionV2> {
+  const res = await fetch(`${STATIC_BASE}/comparacion_v2.json`);
+  if (!res.ok) throw new Error(`No se pudo cargar la comparación (${res.status})`);
+  return res.json();
 }
 
 function analyzeRiskFactors(applicant: ApplicantFormData): RiskFactor[] {
@@ -355,54 +191,34 @@ export async function predictApplicant(data: ApplicantFormData): Promise<Predict
     // Continuar con inferencia neuronal en navegador (GitHub Pages)
   }
 
-  const bundle = await getModelBundle();
+  // Inferencia en el navegador con el modelo v2 (GitHub Pages).
+  const bundle = await getModelBundleV2();
   const product = String(data.linea_negocio ?? '');
-  const policy = bundle.product_threshold_policy;
-  if (policy?.unsupported_products?.[product]) {
-    throw new Error(policy.unsupported_products[product]);
+  const r = predictV2(data as unknown as Record<string, unknown>, bundle);
+  if (r.decision === 'BLOQUEADO' || r.umbral === null) {
+    throw new Error(`La línea de crédito "${product}" no está disponible en la política v2 (solo efectivo y rotativo).`);
   }
-  const threshold = policy?.thresholds?.[product]?.threshold ?? policy?.default_threshold ?? bundle.threshold;
-  const x = preprocessApplicant(data, bundle.preprocessor);
-  const useEnsemble = (data.model_type ?? 'ensemble') === 'ensemble';
-
-  let rawProb: number;
-  if (useEnsemble) {
-    const probs = bundle.ensemble_models.map((m) => forwardPass(x, m));
-    const neuralProb = probs.reduce((acc, v) => acc + v, 0) / probs.length;
-    if (bundle.hybrid) {
-      const hgbProb = histGradientBoostingForward(x, bundle.hybrid.hist_gradient_boosting);
-      rawProb = bundle.hybrid.hgb_weight * hgbProb + (1 - bundle.hybrid.hgb_weight) * neuralProb;
-    } else {
-      rawProb = neuralProb;
-    }
-  } else {
-    rawProb = forwardPass(x, bundle.single_model);
-  }
-
-  const probApto = Number(rawProb.toFixed(4));
-  const probNoApto = Number((1.0 - rawProb).toFixed(4));
-  const resultado = rawProb >= threshold ? 'APTO' : 'NO APTO';
+  const threshold = r.umbral;
+  const p = r.probAptoReal;
 
   return {
     id_solicitud: data.id_solicitud ?? 999001,
-    resultado,
-    probabilidad_apto: probApto,
-    probabilidad_no_apto: probNoApto,
+    resultado: r.decision,
+    probabilidad_apto: Number(p.toFixed(4)),
+    probabilidad_no_apto: Number((1 - p).toFixed(4)),
     threshold,
-    decision_rule: `P(APTO) >= ${threshold.toFixed(2)} para ${product} => APTO, de lo contrario NO APTO`,
+    decision_rule:
+      `P(paga) >= ${threshold.toFixed(3)} para ${product}: un mal crédito cuesta ${r.costo} veces lo que deja uno bueno, ` +
+      `así que aprobar conviene si P(paga) >= c/(1+c). P(paga) está calibrada y corregida a la mora real del ${(bundle.politica.mora_real * 100).toFixed(2)} %.`,
     modelo_utilizado: {
-      nombre: useEnsemble && bundle.hybrid ? 'Híbrido HGB + Ensemble Top-3' : useEnsemble ? 'Ensemble_Top3_Diverso' : 'Single_Best_Model (cfg_c_s42)',
-      tipo: useEnsemble
-        ? bundle.hybrid
-          ? 'HistGradientBoosting (65%) + ensamble de 3 redes neuronales (35%)'
-          : 'Ensamble de 3 redes neuronales con arquitecturas y activaciones heterogéneas'
-        : 'Red neuronal profunda [64, 32, 16] ReLU',
-      pesos: useEnsemble ? bundle.hybrid ? '0.65 árboles / 0.35 redes' : 'Ponderación aritmética equiponderada [1/3, 1/3, 1/3]' : '1.0',
+      nombre: 'CrediRisk v2 · Híbrido HGB + 3 redes, con y sin score',
+      tipo: '0,85 × (0,90 árbol + 0,10 redes, con score) + 0,15 × (0,90 árbol + 0,10 redes, sin score), calibrado',
+      pesos: '0.90 árboles / 0.10 redes; 85 % con score / 15 % sin score',
     },
     factores_relevantes: analyzeRiskFactors(data),
     disclaimer_academico:
       'Este sistema es un prototipo experimental con fines académicos y de investigación. ' +
-      'El modelo fue entrenado sobre un dataset balanceado (50% aptos / 50% no aptos) de 49,650 registros. ' +
+      'El modelo v2 se entrenó con 42.202 registros balanceados (50 % aptos / 50 % no aptos); la probabilidad mostrada está corregida a la mora real del 8,07 %. ' +
       'Las predicciones reflejan patrones estadísticos multivariados de correlación y no constituyen un dictamen ' +
       'financiero vinculante ni establecen relaciones de causalidad crediticia.',
   };

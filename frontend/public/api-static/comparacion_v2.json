@@ -1,0 +1,83 @@
+{
+ "resultados": [
+  {
+   "nombre": "AUC en validación cruzada",
+   "viejo": 0.7578060076119738,
+   "nuevo": 0.7617143387359225,
+   "formato": "auc"
+  },
+  {
+   "nombre": "AUC en la prueba apartada",
+   "viejo": 0.7517421901769923,
+   "nuevo": 0.7551582846943967,
+   "formato": "auc"
+  },
+  {
+   "nombre": "AUC en efectivo",
+   "viejo": 0.7567966645122628,
+   "nuevo": 0.760962640582753,
+   "formato": "auc"
+  },
+  {
+   "nombre": "AUC en rotativo",
+   "viejo": 0.7466335289737076,
+   "nuevo": 0.74828613972791,
+   "formato": "auc"
+  },
+  {
+   "nombre": "Dependencia del score",
+   "viejo": 60.133777116891935,
+   "nuevo": 48.84933205787272,
+   "formato": "pct_menor"
+  },
+  {
+   "nombre": "AUC si falta el score",
+   "viejo": 0.6884962163195819,
+   "nuevo": 0.6925237394451726,
+   "formato": "auc"
+  },
+  {
+   "nombre": "Error de calibración (ECE)",
+   "viejo": 0.008713605346915185,
+   "nuevo": 0.003039720206547239,
+   "formato": "menor"
+  }
+ ],
+ "mejora_cv": {
+  "diff": 0.003908331123948727,
+  "ci_low": 0.00279224512305106,
+  "ci_high": 0.004940796261030953
+ },
+ "cambios": [
+  [
+   "Peso árbol / redes",
+   "0,65 / 0,35, fijado a mano",
+   "0,90 / 0,10, buscado en validación cruzada"
+  ],
+  [
+   "Datos que ve el árbol",
+   "imputados, escalados y one-hot",
+   "crudos + 12 razones entre variables"
+  ],
+  [
+   "Árbol",
+   "31 hojas, tasa 0,04, 1 semilla",
+   "15 hojas, tasa 0,02, 5 semillas"
+  ],
+  [
+   "Vacíos en las redes",
+   "mediana fuera de escala (error)",
+   "mediana en escala logarítmica"
+  ],
+  [
+   "Modelo sin score",
+   "no",
+   "15 % de la mezcla"
+  ],
+  [
+   "Umbral",
+   "exactitud en datos 50/50",
+   "por costo, calibrado, mora real 8,07 %"
+  ]
+ ]
+}

@@ -1,3 +1,4 @@
+import ModelV2ComparisonView from './lab/ModelV2ComparisonView';
 import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { 
   BarChart3, 
@@ -137,6 +138,8 @@ export const ModelLabView: React.FC<ModelLabViewProps> = ({
         {/* PESTAÑA 1: RESUMEN Y ESTADO */}
         {activeTab === 'summary' && (
           <div className="space-y-6 animate-in fade-in duration-200">
+            <ModelV2ComparisonView />
+
             {/* Banner Introductorio */}
             <div className="bg-[#0B1220] p-6 sm:p-8 rounded-2xl border border-white/10 shadow-lg relative overflow-hidden">
               <div className="max-w-3xl space-y-3 relative z-10">
@@ -179,7 +182,7 @@ export const ModelLabView: React.FC<ModelLabViewProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2 text-xs font-semibold text-white">
                     <Cpu className="w-4 h-4 text-blue-400" />
-                    <span>Modelo Oficial Congelado</span>
+                    <span>Modelo en uso (v2)</span>
                   </div>
                   <ConceptTrigger 
                     conceptKey="ensemble" 
@@ -188,10 +191,10 @@ export const ModelLabView: React.FC<ModelLabViewProps> = ({
                   />
                 </div>
                 <div className="text-base font-bold font-mono text-white">
-                  Ensemble_Top3_Diverso
+                  CrediRisk_v2_Hibrido
                 </div>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Ensamble de 3 redes neuronales profundas heterogéneas equiponderadas (1/3 cada una), sumando 12,995 parámetros totales:
+                  Híbrido: 90 % HistGradientBoosting (5 semillas) + 10 % las 3 redes, mezclado 85/15 con un modelo sin score. Las redes son las mismas arquitecturas:
                 </p>
                 <div className="space-y-1 text-[11px] font-mono text-slate-300 bg-white/5 p-2.5 rounded-xl border border-white/5">
                   <div>• cfg_c_s42 ([64, 32, 16], ReLU)</div>
@@ -281,17 +284,17 @@ export const ModelLabView: React.FC<ModelLabViewProps> = ({
 
                 <div className="p-4 rounded-xl bg-slate-950/70 border border-white/5 space-y-1">
                   <span className="font-mono text-blue-400 font-bold text-xs block">2. Preprocesamiento</span>
-                  <strong className="text-white block">44 Entradas Estandarizadas</strong>
+                  <strong className="text-white block">Árbol: 36 crudas · Redes: 65 estandarizadas</strong>
                   <p className="text-slate-400 text-[11px] leading-relaxed">
-                    Clipping percentil p1-p99, transformaciones Log1p / Signed-Log y StandardScaler ajustado estrictamente en Train.
+                    El árbol recibe las 23 variables + 13 razones sin transformar. Las redes: recorte p1-p99, logaritmo, mediana en la misma escala, banderas de vacío y StandardScaler.
                   </p>
                 </div>
 
                 <div className="p-4 rounded-xl bg-slate-950/70 border border-white/5 space-y-1">
                   <span className="font-mono text-blue-400 font-bold text-xs block">3. Inferencia Neuronal</span>
-                  <strong className="text-white block">Ensamble Top-3 Diverso</strong>
+                  <strong className="text-white block">Árbol + 3 redes, con y sin score</strong>
                   <p className="text-slate-400 text-[11px] leading-relaxed">
-                    Tres redes heterogéneas procesan el vector en paralelo y promedian sus probabilidades de forma equiponderada.
+                    0,85 × (0,90 árbol + 0,10 redes) con score + 0,15 × lo mismo sin score; después, calibración isotónica.
                   </p>
                 </div>
 
@@ -299,7 +302,7 @@ export const ModelLabView: React.FC<ModelLabViewProps> = ({
                   <span className="font-mono text-blue-400 font-bold text-xs block">4. Regla de Decisión</span>
                   <strong className="text-white block">Dictamen de Crédito</strong>
                   <p className="text-slate-400 text-[11px] leading-relaxed">
-                    Si P(Apto) ≥ 0.50 el sistema dictamina APTO, de lo contrario dictamina NO APTO (con probabilidad continua).
+                    Con la mora real (8,07 %) y un mal crédito que cuesta 10 veces lo que deja uno bueno, APTO si P(paga) ≥ 10/11 ≈ 0,909.
                   </p>
                 </div>
               </div>

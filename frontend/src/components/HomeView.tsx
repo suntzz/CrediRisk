@@ -183,7 +183,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectView }) => {
                   </span>
                 </div>
                 <span className="text-xs font-mono text-slate-400">
-                  Test ROC-AUC: 0.7448
+                  Modelo v2 · AUC 0,7617
                 </span>
               </div>
 
@@ -192,7 +192,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onSelectView }) => {
               </h3>
 
               <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mb-4">
-                Inspecciona la arquitectura de las 3 redes neuronales profundas (MLP), la matriz de confusión sobre el conjunto Test congelado (49,650 registros) y las curvas ROC-AUC.
+                Compara el modelo viejo con el v2 (AUC 0,7578 → 0,7617, dependencia del score 60 % → 49 %) e inspecciona la arquitectura, las métricas y el historial de experimentos.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-3 border-t border-slate-800/80 text-xs text-slate-300">
