@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 import config as C
-from predict import load_model_and_preprocessor, score
+from predict import load_model_and_preprocessor, score, score_hybrid
 from product_policy import is_supported_product, load_policy, threshold_for_product
 
 os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
@@ -48,10 +48,12 @@ _ensemble_models = None
 _single_model = None
 _ensemble_manifest = None
 _product_policy = None
+_hgb_model = None
+_hybrid_config = None
 
 
 def get_artifacts():
-    global _preprocessor, _ensemble_models, _single_model, _ensemble_manifest, _product_policy
+    global _preprocessor, _ensemble_models, _single_model, _ensemble_manifest, _product_policy, _hgb_model, _hybrid_config
     if _preprocessor is None:
         _preprocessor, _ensemble_models = load_model_and_preprocessor(use_ensemble=True)
         _, _single_model = load_model_and_preprocessor(use_ensemble=False)
@@ -60,8 +62,12 @@ def get_artifacts():
             manifest_path = C.ARTIFACTS / "ensemble_manifest.json"
         if manifest_path.exists():
             _ensemble_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            _hybrid_config = _ensemble_manifest.get("hybrid")
+            if _hybrid_config:
+                import joblib
+                _hgb_model = joblib.load(C.ARTIFACTS / _hybrid_config["hgb_model_file"])
         _product_policy = load_policy()
-    return _preprocessor, _ensemble_models, _single_model, _ensemble_manifest, _product_policy
+    return _preprocessor, _ensemble_models, _single_model, _ensemble_manifest, _product_policy, _hgb_model, _hybrid_config
 
 
 class ApplicantInput(BaseModel):
@@ -94,7 +100,7 @@ class ApplicantInput(BaseModel):
 
 @app.get("/api/health")
 def health_check():
-    pre, ensemble_models, single_model, manifest, policy = get_artifacts()
+    pre, ensemble_models, single_model, manifest, policy, hgb_model, hybrid_config = get_artifacts()
     return {
         "status": "healthy",
         "service": "CrediRisk Deep Learning Inference API",
@@ -104,6 +110,7 @@ def health_check():
         "ensemble_available": ensemble_models is not None,
         "single_model_available": single_model is not None,
         "models_in_ensemble": len(ensemble_models) if ensemble_models else 0,
+        "hybrid_model_available": hgb_model is not None,
         "architecture_summary": {
             "m1": "cfg_c_s42 ([64,32,16], ReLU, Adam lr=0.0005, drop=0.15)",
             "m2": "cfg_b_leaky_s42 ([32,16], LeakyReLU alpha=0.1, Adam lr=0.0005, drop=0.15)",
@@ -207,12 +214,43 @@ def get_sample_applicant():
 @app.get("/api/metrics")
 def get_metrics():
     test_eval_file = ROOT / "reports" / "final_test_evaluation.csv"
+    hybrid_validation_file = ROOT / "reports" / "phase7_hybrid_validation.csv"
+    hybrid_test_file = ROOT / "reports" / "phase7_hybrid_test.csv"
     importance_file = ROOT / "reports" / "importancia_variables.csv"
 
     test_metrics = {}
+    confusion_matrix = {
+        "tn": 2550, "fp": 1174, "fn": 1248, "tp": 2476, "total_test": 7448,
+    }
+    if hybrid_validation_file.exists() and hybrid_test_file.exists():
+        val_df = pd.read_csv(hybrid_validation_file)
+        test_df = pd.read_csv(hybrid_test_file)
+        val_row = val_df.loc[val_df["candidate"] == "hybrid_65_hgb_35_neural"].iloc[0]
+        test_row = test_df.loc[test_df["linea_negocio"] == "GLOBAL"].iloc[0]
+        test_metrics = {
+            "modelo_final": "CrediRisk_Hybrid_HGB_Neural",
+            "test_auc": float(test_row["auc"]),
+            "val_auc": float(val_row["auc"]),
+            "test_pr_auc": float(test_row["pr_auc"]),
+            "test_log_loss": float(test_row["log_loss"]),
+            "test_brier": float(test_row["brier"]),
+            "test_accuracy": float(test_row["accuracy"]) * 100,
+            "test_precision": float(test_row["precision"]) * 100,
+            "test_recall": float(test_row["recall"]) * 100,
+            "test_f1": float(test_row["f1"]),
+            "threshold": float(test_row["threshold"]),
+            "n_train": 34755,
+            "n_val": 7447,
+            "n_test": int(test_row["n_test"]),
+        }
+        confusion_matrix = {
+            "tn": int(test_row["tn"]), "fp": int(test_row["fp"]),
+            "fn": int(test_row["fn"]), "tp": int(test_row["tp"]),
+            "total_test": int(test_row["n_test"]),
+        }
     if test_eval_file.exists():
         df_eval = pd.read_csv(test_eval_file)
-        if not df_eval.empty:
+        if not df_eval.empty and not test_metrics:
             row = df_eval.iloc[0].to_dict()
             test_metrics = {
                 "modelo_final": row.get("modelo_final", "Ensemble_Top3_Diverso"),
@@ -304,13 +342,7 @@ def get_metrics():
     return {
         "evaluation": test_metrics,
         "feature_importance_top10": importance_list,
-        "confusion_matrix": {
-            "tn": 2550,  # Verdaderos No Aptos clasificados correctamente (TN)
-            "fp": 1174,  # Falsos Positivos (FP - Aprobados indebidamente)
-            "fn": 1248,  # Falsos Negativos (FN - Rechazados indebidamente)
-            "tp": 2476,  # Verdaderos Aptos clasificados correctamente (TP)
-            "total_test": 7448,
-        },
+        "confusion_matrix": confusion_matrix,
         "experiments_phase3": p3_experiments,
         "multiseed_summary": multiseed_data,
         "ensemble_validation": ensembles_data,
@@ -434,7 +466,7 @@ def analyze_risk_factors(applicant: dict) -> List[Dict[str, Any]]:
 
 @app.post("/api/predict")
 def predict_credit(applicant: ApplicantInput):
-    pre, ensemble_models, single_model, manifest, policy = get_artifacts()
+    pre, ensemble_models, single_model, manifest, policy, hgb_model, hybrid_config = get_artifacts()
 
     # Convertir datos a DataFrame para el pipeline
     data_dict = applicant.model_dump()
@@ -462,7 +494,13 @@ def predict_credit(applicant: ApplicantInput):
         raise HTTPException(status_code=500, detail="Modelo neuronal no cargado")
 
     try:
-        scored = score(df_applicant, pre, chosen_model, use_ensemble=use_ensemble, threshold=threshold)
+        if use_ensemble and hgb_model is not None and hybrid_config is not None:
+            scored = score_hybrid(
+                df_applicant, pre, ensemble_models, hgb_model,
+                hgb_weight=float(hybrid_config["hgb_weight"]), threshold=threshold,
+            )
+        else:
+            scored = score(df_applicant, pre, chosen_model, use_ensemble=use_ensemble, threshold=threshold)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error en inferencia de datos: {str(e)}")
 
@@ -481,9 +519,9 @@ def predict_credit(applicant: ApplicantInput):
         "threshold": threshold,
         "decision_rule": f"P(APTO) >= {threshold:.2f} para {product} => APTO, de lo contrario NO APTO",
         "modelo_utilizado": {
-            "nombre": "Ensemble_Top3_Diverso" if use_ensemble else "Single_Best_Model (cfg_c_s42)",
-            "tipo": "Ensamble de 3 redes neuronales con arquitecturas y activaciones heterogéneas" if use_ensemble else "Red neuronal profunda [64, 32, 16] ReLU",
-            "pesos": "Ponderación aritmética equiponderada [1/3, 1/3, 1/3]" if use_ensemble else "1.0",
+            "nombre": "Híbrido HGB + Ensemble Top-3" if use_ensemble and hgb_model is not None else ("Ensemble_Top3_Diverso" if use_ensemble else "Single_Best_Model (cfg_c_s42)"),
+            "tipo": "HistGradientBoosting (65%) + ensamble de 3 redes neuronales (35%)" if use_ensemble and hgb_model is not None else ("Ensamble de 3 redes neuronales con arquitecturas y activaciones heterogéneas" if use_ensemble else "Red neuronal profunda [64, 32, 16] ReLU"),
+            "pesos": "0.65 árboles / 0.35 redes" if use_ensemble and hgb_model is not None else ("Ponderación aritmética equiponderada [1/3, 1/3, 1/3]" if use_ensemble else "1.0"),
         },
         "factores_relevantes": risk_factors,
         "disclaimer_academico": (

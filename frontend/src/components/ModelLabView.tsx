@@ -67,16 +67,12 @@ export const ModelLabView: React.FC<ModelLabViewProps> = ({
   }, [activeTab]);
 
   const evalData = metrics?.evaluation;
-  // Valores oficiales certificados respaldados por reports/final_evaluation.json y README.md
-  const cm = (metrics?.confusion_matrix && metrics.confusion_matrix.tn === 2550)
-    ? metrics.confusion_matrix
-    : { 
-        tn: 2550, 
-        fp: 1174, 
-        fn: 1248, 
-        tp: 2476, 
-        total_test: 7448 
-      };
+  const cm = metrics?.confusion_matrix ?? {
+    tn: 2550, fp: 1174, fn: 1248, tp: 2476, total_test: 7448,
+  };
+  const validationDelta = evalData
+    ? ((evalData.test_auc - evalData.val_auc) / evalData.val_auc * 100).toFixed(2)
+    : '-1.19';
   const importance = metrics?.feature_importance_top10 || [];
   const rawP3Experiments = metrics?.experiments_phase3 || [];
   const multiseedData = metrics?.multiseed_summary || [];
@@ -345,7 +341,7 @@ export const ModelLabView: React.FC<ModelLabViewProps> = ({
                   </div>
                 </div>
                 <div className="mt-2 pt-2 border-t border-white/5 text-[10px] text-emerald-400 font-mono">
-                  Val: 0.7538 (-1.19%)
+                  Val: {evalData?.val_auc?.toFixed(4) || '0.7538'} ({validationDelta}%)
                 </div>
               </div>
 
@@ -361,7 +357,7 @@ export const ModelLabView: React.FC<ModelLabViewProps> = ({
                   </div>
                 </div>
                 <div className="mt-2 pt-2 border-t border-white/5 text-[10px] text-slate-400 font-mono">
-                  5,026 / 7,448 aciertos
+                  {cm.tn + cm.tp} / {cm.total_test.toLocaleString('es-CO')} aciertos
                 </div>
               </div>
 
@@ -422,8 +418,8 @@ export const ModelLabView: React.FC<ModelLabViewProps> = ({
                   </div>
                   {/* Brier como valor principal y LogLoss secundario: el par completo no cabía en una línea */}
                   <div className="text-xl font-bold font-mono text-white whitespace-nowrap">
-                    0.205
-                    <span className="ml-1 text-sm font-semibold text-slate-400">/ 0.596</span>
+                    {evalData?.test_brier?.toFixed(3) || '0.205'}
+                    <span className="ml-1 text-sm font-semibold text-slate-400">/ {evalData?.test_log_loss?.toFixed(3) || '0.596'}</span>
                   </div>
                 </div>
                 <div className="mt-2 pt-2 border-t border-white/5 text-[10px] text-slate-400 font-mono">

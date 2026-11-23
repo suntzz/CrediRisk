@@ -1,0 +1,175 @@
+{
+  "validation": [
+    {
+      "candidate": "ensemble_neural",
+      "auc": 0.7538241323926831,
+      "pr_auc": 0.749073540359391,
+      "log_loss": 0.5888476371765137,
+      "brier": 0.20176754891872406,
+      "threshold": 0.5,
+      "accuracy": 0.6916879280247079,
+      "precision": 0.693412849010572,
+      "recall": 0.6870803115766855,
+      "f1": 0.6902320561252023,
+      "balanced_accuracy": 0.6916873093866241,
+      "tn": 2593,
+      "fp": 1131,
+      "fn": 1165,
+      "tp": 2558,
+      "approval_rate": 0.49536726198469183
+    },
+    {
+      "candidate": "hist_gradient_boosting",
+      "auc": 0.7578516626549682,
+      "pr_auc": 0.7541792894543238,
+      "log_loss": 0.5845225625138883,
+      "brier": 0.20010707982906117,
+      "threshold": 0.5,
+      "accuracy": 0.6887337182758158,
+      "precision": 0.6861913596607474,
+      "recall": 0.6954069298952458,
+      "f1": 0.6907684098185699,
+      "balanced_accuracy": 0.6887346142494488,
+      "tn": 2540,
+      "fp": 1184,
+      "fn": 1134,
+      "tp": 2589,
+      "approval_rate": 0.5066469719350074
+    },
+    {
+      "candidate": "hybrid_65_hgb_35_neural",
+      "auc": 0.759729702984294,
+      "pr_auc": 0.7564259810804415,
+      "log_loss": 0.5830815896744963,
+      "brier": 0.19940407873819563,
+      "threshold": 0.5,
+      "accuracy": 0.691285081240768,
+      "precision": 0.6893617021276596,
+      "recall": 0.6962127316680097,
+      "f1": 0.6927702792997461,
+      "balanced_accuracy": 0.6912857428479684,
+      "tn": 2556,
+      "fp": 1168,
+      "fn": 1131,
+      "tp": 2592,
+      "approval_rate": 0.5049013025379347
+    }
+  ],
+  "test": [
+    {
+      "linea_negocio": "GLOBAL",
+      "n_test": 7448,
+      "auc": 0.7517422622845282,
+      "pr_auc": 0.7452158325264222,
+      "log_loss": 0.5899777064269042,
+      "brier": 0.2023506701342603,
+      "threshold": 0.5,
+      "accuracy": 0.6840762620837809,
+      "precision": 0.6825565912117177,
+      "recall": 0.6882384532760473,
+      "f1": 0.6853857467575879,
+      "balanced_accuracy": 0.6840762620837808,
+      "tn": 2532,
+      "fp": 1192,
+      "fn": 1161,
+      "tp": 2563,
+      "approval_rate": 0.5041621911922664
+    },
+    {
+      "linea_negocio": "Cash loans",
+      "n_test": 6827,
+      "threshold": 0.53,
+      "auc": 0.7530465595908842,
+      "pr_auc": 0.7384866196334859,
+      "log_loss": 0.5888150884147918,
+      "brier": 0.20180336537576468,
+      "accuracy": 0.6840486304379669,
+      "precision": 0.6928594717965438,
+      "recall": 0.6362275449101796,
+      "f1": 0.6633369751833932,
+      "balanced_accuracy": 0.6830406436911094,
+      "tn": 2545,
+      "fp": 942,
+      "fn": 1215,
+      "tp": 2125,
+      "approval_rate": 0.44924564230262193
+    },
+    {
+      "linea_negocio": "Revolving loans",
+      "n_test": 621,
+      "threshold": 0.67,
+      "auc": 0.7140471167369902,
+      "pr_auc": 0.7993423551845844,
+      "log_loss": 0.6027590158772924,
+      "brier": 0.20836749716525807,
+      "accuracy": 0.6360708534621579,
+      "precision": 0.816,
+      "recall": 0.53125,
+      "f1": 0.6435331230283912,
+      "balanced_accuracy": 0.6685785864978904,
+      "tn": 191,
+      "fp": 46,
+      "fn": 180,
+      "tp": 204,
+      "approval_rate": 0.4025764895330113
+    }
+  ],
+  "manifest": {
+    "ensemble_name": "CrediRisk_Hybrid_HGB_Neural",
+    "source_candidate": "hybrid_65_hgb_35_neural",
+    "weights": "0.65 HistGradientBoosting + 0.35 Ensemble Top-3",
+    "models": [
+      {
+        "file": "ensemble_models/cfg_c_s42.keras",
+        "architecture": [
+          64,
+          32,
+          16
+        ],
+        "activation": "relu",
+        "lr": 0.0005,
+        "dropout": 0.15,
+        "seed": 42
+      },
+      {
+        "file": "ensemble_models/cfg_b_leaky_s42.keras",
+        "architecture": [
+          32,
+          16
+        ],
+        "activation": "leaky_relu",
+        "lr": 0.0005,
+        "dropout": 0.15,
+        "seed": 42
+      },
+      {
+        "file": "ensemble_models/cfg_base_s2026.keras",
+        "architecture": [
+          64,
+          32,
+          16
+        ],
+        "activation": "relu",
+        "lr": 0.001,
+        "dropout": 0.2,
+        "seed": 2026
+      }
+    ],
+    "hybrid": {
+      "hgb_model_file": "hybrid_hgb.joblib",
+      "hgb_weight": 0.65,
+      "config": {
+        "max_iter": 450,
+        "learning_rate": 0.04,
+        "max_leaf_nodes": 31,
+        "min_samples_leaf": 40,
+        "l2_regularization": 3.0,
+        "early_stopping": true,
+        "validation_fraction": 0.12,
+        "n_iter_no_change": 25,
+        "random_state": 42
+      },
+      "n_iter": 273
+    }
+  }
+}

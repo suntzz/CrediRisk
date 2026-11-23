@@ -116,11 +116,12 @@ def metric(value) -> str:
     return f"{float(value):.5f}"
 
 
-def build_chart(validation: pd.DataFrame, score32: pd.DataFrame) -> None:
+def build_chart(validation: pd.DataFrame, score32: pd.DataFrame, hybrid: pd.DataFrame) -> None:
     score_mask = score32.loc[score32["candidate"] == "score_mask_32"].iloc[0]
     comparison = pd.concat([
         validation[["candidate", "auc"]],
         pd.DataFrame([{"candidate": "score_mask_32", "auc": float(score_mask["auc"])}]),
+        hybrid[["candidate", "auc"]],
     ], ignore_index=True)
     order = comparison.sort_values("auc", ascending=True)
     labels = order["candidate"].replace({
@@ -130,14 +131,17 @@ def build_chart(validation: pd.DataFrame, score32: pd.DataFrame) -> None:
         "wide_elu_regularized": "ELU amplio regularizado",
         "compact_gelu": "GELU compacto",
         "score_mask_32": "Score enmascarado 32%",
+        "ensemble_neural": "Ensamble neuronal",
+        "hist_gradient_boosting": "HistGradientBoosting",
+        "hybrid_65_hgb_35_neural": "Híbrido HGB + red",
     })
     colors = [
-        f"#{TEAL}" if c == "baseline_production" else "#C97A40" if c == "score_mask_32" else "#8DA7B8"
+        f"#{TEAL}" if c == "hybrid_65_hgb_35_neural" else "#3B82A0" if c == "hist_gradient_boosting" else "#C97A40" if c == "score_mask_32" else "#8DA7B8"
         for c in order["candidate"]
     ]
-    fig, ax = plt.subplots(figsize=(8.3, 4.9), dpi=180)
+    fig, ax = plt.subplots(figsize=(8.3, 6.0), dpi=180)
     bars = ax.barh(labels, order["auc"], color=colors, height=0.58)
-    ax.set_xlim(0.748, 0.755)
+    ax.set_xlim(0.748, 0.761)
     ax.set_xlabel("ROC AUC en validation")
     ax.grid(axis="x", color="#D9E2EC", linewidth=0.8)
     ax.set_axisbelow(True)
@@ -157,7 +161,7 @@ def setup_styles(document: Document) -> None:
     normal = styles["Normal"]
     normal.font.name = "Aptos"
     normal._element.rPr.rFonts.set(qn("w:eastAsia"), "Aptos")
-    normal.font.size = Pt(10.5)
+    normal.font.size = Pt(10)
     normal.font.color.rgb = RGBColor(0, 0, 0)
     for name, size in (("Title", 26), ("Heading 1", 16), ("Heading 2", 12)):
         style = styles[name]
@@ -188,11 +192,12 @@ def add_header_footer(section) -> None:
 
 def main() -> None:
     validation = pd.read_csv(REPORTS / "phase5_generalization_validation.csv")
-    epochs = pd.read_csv(REPORTS / "phase5_generalization_epochs.csv")
     test = pd.read_csv(REPORTS / "phase5_generalization_test.csv")
+    hybrid_validation = pd.read_csv(REPORTS / "phase7_hybrid_validation.csv")
+    hybrid_test = pd.read_csv(REPORTS / "phase7_hybrid_test.csv")
     score32 = pd.read_csv(REPORTS / "phase4_score32_candidate_comparison.csv")
     feature_balance = pd.read_csv(REPORTS / "phase6_feature_balance_validation.csv")
-    build_chart(validation, score32)
+    build_chart(validation, score32, hybrid_validation)
 
     document = Document()
     section = document.sections[0]
@@ -212,20 +217,20 @@ def main() -> None:
     run.font.size = Pt(12)
     run.font.color.rgb = RGBColor.from_string(GRAY)
     document.add_paragraph()
-    paragraph(document, "Conclusión. El ensamble neuronal ya publicado se conservó como modelo de producción porque obtuvo el mejor equilibrio entre discriminación y calibración. Se ejecutaron 12 entrenamientos adicionales con controles anti sobreajuste; ninguno lo superó de forma objetiva.")
+    paragraph(document, "Conclusión. El modelo de producción es ahora un híbrido de HistGradientBoosting y ensamble neuronal. Mejoró el AUC y la calibración en validation y la mejora se confirmó en test aislado.")
     paragraph(document, "Este informe reúne los cambios realizados, los datos reproducibles, las épocas efectivamente ejecutadas y las pruebas de publicación. Está pensado para explicar la decisión técnica ante docentes y equipo de proyecto.")
     document.add_paragraph()
 
     document.add_heading("Resumen de resultados", level=1)
-    base = validation.loc[validation["candidate"] == "baseline_production"].iloc[0]
-    selected_test = test.loc[test["linea_negocio"] == "GLOBAL"].iloc[0]
+    base = hybrid_validation.loc[hybrid_validation["candidate"] == "hybrid_65_hgb_35_neural"].iloc[0]
+    selected_test = hybrid_test.loc[hybrid_test["linea_negocio"] == "GLOBAL"].iloc[0]
     add_table(document, ["Indicador", "Resultado", "Interpretación"], [
-        ["Modelo publicado", "Ensamble diverso de 3 redes", "Ganador por AUC y Brier en validation"],
+        ["Modelo publicado", "Híbrido HGB 65% y redes 35%", "Ganador por AUC y Brier en validation y test"],
         ["AUC validation", metric(base["auc"]), "Capacidad de separar aptos y no aptos"],
         ["AUC test aislado", metric(selected_test["auc"]), "Resultado en datos no usados durante selección"],
         ["Brier validation", metric(base["brier"]), "Calidad de las probabilidades estimadas"],
-        ["Umbral Cash loans", "0.51", "Seleccionado en validation"],
-        ["Umbral Revolving loans", "0.63", "Seleccionado en validation"],
+        ["Umbral Cash loans", "0.53", "Seleccionado en validation"],
+        ["Umbral Revolving loans", "0.67", "Seleccionado en validation"],
     ], widths=[1.65, 1.5, 3.55])
 
     document.add_heading("Datos y protocolo reproducible", level=1)
@@ -244,7 +249,7 @@ def main() -> None:
 
     document.add_heading("Búsqueda de generalización", level=1)
     document.add_picture(str(CHART), width=Inches(6.55))
-    cap = document.add_paragraph("Figura 1. Comparación ROC AUC en validation. Verde: modelo publicado. Naranja: score enmascarado al 32%.", style="Caption")
+    cap = document.add_paragraph("Figura 1. Comparación ROC AUC en validation. Verde: híbrido publicado. Azul: HistGradientBoosting. Naranja: score enmascarado al 32%.", style="Caption")
     cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
     display = validation.copy()
     display["candidate"] = display["candidate"].replace({
@@ -258,18 +263,10 @@ def main() -> None:
     paragraph(document, "Las cuatro familias evaluadas fueron ELU regularizado, ELU con ruido gaussiano de entrada, ELU amplio regularizado y GELU compacto. Cada una se repitió con las semillas 42, 2026 y 7. Ninguna superó la regla de promoción: mejorar al menos 0.001 AUC sin empeorar Brier y sin señales de una brecha train validation excesiva.")
 
     document.add_heading("Épocas y control de sobreajuste", level=1)
-    epochs_display = epochs[["candidate", "seed", "epochs_trained", "best_epoch", "best_val_auc", "loss_gap"]].copy()
-    epochs_display["candidate"] = epochs_display["candidate"].replace({
-        "elu_regularized": "ELU regularizado", "elu_input_noise": "ELU con ruido", "wide_elu_regularized": "ELU amplio", "compact_gelu": "GELU compacto",
-    })
-    add_table(document, ["Familia", "Semilla", "Épocas", "Mejor época", "Mejor AUC val", "Brecha pérdida"], [
-        [r["candidate"], int(r["seed"]), int(r["epochs_trained"]), int(r["best_epoch"]), metric(r["best_val_auc"]), f"{r['loss_gap']:.5f}"]
-        for _, r in epochs_display.iterrows()
-    ], widths=[1.75, 0.65, 0.7, 0.8, 1.1, 1.15], font_size=8)
+    paragraph(document, "Las 12 corridas se detuvieron entre 44 y 105 épocas según la mejora real de val_auc. El detalle reproducible por familia y semilla, incluidas épocas ejecutadas, mejor época y brecha de pérdida, está en reports/phase5_generalization_epochs.csv.")
 
-    document.add_page_break()
     document.add_heading("Resultado final por producto", level=1)
-    product_rows = test.copy()
+    product_rows = hybrid_test.copy()
     add_table(document, ["Segmento", "Registros test", "AUC", "PR AUC", "Brier", "Exactitud balanceada", "Umbral"], [
         [r["linea_negocio"], int(r["n_test"]), metric(r["auc"]), metric(r["pr_auc"]), metric(r["brier"]), metric(r["balanced_accuracy"]), f"{r['threshold']:.2f}"]
         for _, r in product_rows.iterrows()
@@ -289,9 +286,9 @@ def main() -> None:
     for text in [
         "Se añadió ruido gaussiano opcional de entrada para experimentos de regularización. Este ruido actúa únicamente durante entrenamiento.",
         "Se creó una búsqueda reproducible que guarda la configuración, semillas, épocas, pérdidas y métricas de cada corrida.",
-        "Se conservaron el ensamble y los umbrales que ganaron con evidencia. No se promovió ninguna variante inferior.",
+        "Se promovió el híbrido HGB 65% y redes 35% al superar al ensamble neuronal en AUC y Brier en validation y test aislado.",
         "Se verificó la compilación de módulos Python, inferencia directa por producto, git diff check y build de producción del frontend.",
-        "La política y el bundle estático fueron publicados en GitHub Pages sin cambios visuales de interfaz.",
+        "La política, el árbol serializado y el bundle estático se publicaron sin cambios visuales de interfaz; la evaluación del árbol en navegador coincide con Python.",
     ]:
         p = document.add_paragraph(style="Normal")
         p.style = document.styles["Normal"]
@@ -299,7 +296,7 @@ def main() -> None:
         p.add_run("• " + text)
 
     document.add_heading("Archivos reproducibles", level=1)
-    paragraph(document, "Los resultados de este documento pueden verificarse con reports/phase5_generalization_validation.csv, reports/phase5_generalization_epochs.csv, reports/phase5_generalization_test.csv, reports/phase4_score32_candidate_comparison.csv, reports/phase6_feature_balance_validation.csv y los scripts src/phase5_generalization_search.py y src/phase6_feature_balance.py. El informe fuente en Markdown está en docs/INFORME_TECNICO_MODELO_FASE5.md.")
+    paragraph(document, "La evidencia principal está en reports/phase7_hybrid_validation.csv, reports/phase7_hybrid_test.csv y reports/phase7_hybrid_policy.json. Las corridas complementarias están en reports/phase4_score32_candidate_comparison.csv, reports/phase5_generalization_validation.csv y reports/phase6_feature_balance_validation.csv. Los scripts son src/phase7_hybrid_promotion.py, src/phase5_generalization_search.py y src/phase6_feature_balance.py.")
 
     document.save(OUT)
     print(OUT)

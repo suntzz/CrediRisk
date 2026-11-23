@@ -65,15 +65,27 @@ de train, pérdida de validation y tiempo, está en
 `reports/phase5_generalization_epochs.csv`. La tabla completa de selección está en
 `reports/phase5_generalization_validation.csv`.
 
-## 5. Modelo final y prueba aislada
+## 5. Híbrido promovido y prueba aislada
 
-Se conservó el ensamble neuronal diverso de tres redes. En test aislado obtuvo:
+La búsqueda de modelos tabulares detectó interacciones que el ensamble neuronal no
+capturaba por completo. Se entrenó un HistGradientBoosting regularizado y se combinó
+con las redes mediante un promedio 65% árboles y 35% red. El peso se eligió solo en
+validation. La mejora se confirmó una vez en test aislado.
+
+| Modelo | AUC validation | Brier validation | AUC test | Brier test |
+|---|---:|---:|---:|---:|
+| Ensamble neuronal | 0.75382 | 0.20177 | 0.74482 | 0.20503 |
+| HistGradientBoosting | 0.75785 | 0.20011 | 0.75030 | 0.20300 |
+| Híbrido promovido | **0.75973** | **0.19940** | **0.75174** | **0.20235** |
+
+El nuevo modelo de producción es el híbrido. En test supera al ensamble neuronal en
+0.00692 AUC y reduce Brier en 0.00268.
 
 | Segmento | AUC | PR-AUC | Brier | Exactitud balanceada | Umbral |
 |---|---:|---:|---:|---:|---:|
-| Global | 0.74482 | 0.73512 | 0.20503 | 0.67481 | 0.50 |
-| Cash loans | 0.74483 | 0.72551 | 0.20499 | 0.67660 | 0.51 |
-| Revolving loans | 0.72018 | 0.80501 | 0.20553 | 0.67141 | 0.63 |
+| Global | 0.75174 | 0.74522 | 0.20235 | 0.68408 | 0.50 |
+| Cash loans | 0.75305 | 0.73849 | 0.20180 | 0.68304 | 0.53 |
+| Revolving loans | 0.71405 | 0.79934 | 0.20837 | 0.66858 | 0.67 |
 
 Los umbrales se escogen en validation maximizando exactitud balanceada por línea de
 negocio; no son valores inventados. No se habilitó crédito hipotecario: el dataset no
@@ -104,10 +116,12 @@ los pesos aprendidos por el ensamble actual. Los detalles por red y época está
 1. Se añadió regularización opcional de ruido de entrada al constructor experimental.
 2. Se creó `phase5_generalization_search.py`, que guarda modelos por semilla,
    historial de épocas, métricas de validation, test y política por producto.
-3. Se actualizó el manifiesto de producción y los artefactos estáticos con la política
-   validada; el ensamble publicado sigue siendo el mejor candidato.
-4. No se cambiaron layouts, estilos, rutas ni componentes visuales. Los únicos datos
-   enviados a la app estática son los artefactos actualizados del modelo.
+3. Se añadió HistGradientBoosting y una mezcla 65% árboles / 35% redes; el híbrido
+   superó el modelo anterior en validation y test.
+4. Se exportaron los nodos del modelo de árboles al bundle estático y se comprobó que
+   GitHub Pages reproduce exactamente su probabilidad Python.
+5. No se cambiaron layouts ni estilos. Solo se aclaró el campo de respaldo
+   patrimonial y se corrigió su escala real de 0 a 4.
 
 ## 8. Pruebas realizadas
 
@@ -119,6 +133,7 @@ los pesos aprendidos por el ensamble actual. Los detalles por red y época está
 - `git diff --check`.
 - Build de producción del frontend con `npm run build`.
 - Verificación de GitHub Pages y del `model_bundle.json` publicado.
+- Paridad exacta entre la evaluación estática del árbol y `predict_proba` de Python.
 
 ## 9. Limitaciones y siguiente paso responsable
 

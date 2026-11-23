@@ -60,6 +60,19 @@ def score(df: pd.DataFrame, pre, model_or_models, use_ensemble=False, threshold:
     return out
 
 
+def score_hybrid(df: pd.DataFrame, pre, neural_models, hgb_model, hgb_weight: float, threshold: float) -> pd.DataFrame:
+    """Combina el ensamble neuronal con HistGradientBoosting por promedio ponderado."""
+    X = pre.transform(df)
+    neural_probs = np.mean([m.predict(X, verbose=0).ravel() for m in neural_models], axis=0)
+    tree_probs = hgb_model.predict_proba(X)[:, 1]
+    probs = hgb_weight * tree_probs + (1.0 - hgb_weight) * neural_probs
+    out = df[["id_solicitud"]].copy() if "id_solicitud" in df else pd.DataFrame({"id_solicitud": np.arange(1, len(df) + 1)}, index=df.index)
+    out["probabilidad_apto"] = probs.round(4)
+    out["probabilidad_no_apto"] = (1.0 - probs).round(4)
+    out["resultado"] = ["APTO" if value >= threshold else "NO APTO" for value in probs]
+    return out
+
+
 if __name__ == "__main__":
     a = argparse.ArgumentParser(description="Inferencia de riesgo crediticio para solicitantes")
     a.add_argument("--json", help="Archivo JSON con un solicitante")

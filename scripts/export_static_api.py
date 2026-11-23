@@ -8,6 +8,8 @@ import json
 import sys
 from pathlib import Path
 
+import joblib
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
@@ -39,6 +41,21 @@ def export_keras_model(model):
                 "negative_slope": float(cfg.get("negative_slope", 0.1)),
             })
     return layers_out
+
+
+def export_hist_gradient_boosting(model):
+    """Serializa nodos numéricos para que GitHub Pages replique inferencia exacta."""
+    trees = []
+    for predictors in model._predictors:
+        nodes = predictors[0].nodes
+        trees.append([
+            [
+                int(node["is_leaf"]), int(node["feature_idx"]), float(node["num_threshold"]),
+                int(node["left"]), int(node["right"]), int(node["missing_go_to_left"]), float(node["value"]),
+            ]
+            for node in nodes
+        ])
+    return {"baseline": float(model._baseline_prediction[0, 0]), "trees": trees}
 
 
 def main():
@@ -73,6 +90,16 @@ def main():
         "ensemble_models": [export_keras_model(m) for m in ensemble_models],
         "single_model": export_keras_model(single_model),
     }
+    manifest_path = C.ARTIFACTS / "production_manifest.json"
+    if manifest_path.exists():
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        hybrid = manifest.get("hybrid")
+        if hybrid:
+            hgb = joblib.load(C.ARTIFACTS / hybrid["hgb_model_file"])
+            bundle["hybrid"] = {
+                "hgb_weight": float(hybrid["hgb_weight"]),
+                "hist_gradient_boosting": export_hist_gradient_boosting(hgb),
+            }
 
     (OUT_DIR / "model_bundle.json").write_text(
         json.dumps(bundle, ensure_ascii=False, separators=(",", ":")),

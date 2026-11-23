@@ -42,6 +42,14 @@ interface ModelBundle {
   };
   ensemble_models: LayerSpec[][];
   single_model: LayerSpec[];
+  hybrid?: {
+    hgb_weight: number;
+    hist_gradient_boosting: {
+      baseline: number;
+      // [isLeaf, featureIndex, threshold, leftIndex, rightIndex, missingGoLeft, leafValue]
+      trees: number[][][];
+    };
+  };
 }
 
 let cachedBundle: ModelBundle | null = null;
@@ -164,6 +172,26 @@ function forwardPass(xInput: number[], layers: LayerSpec[]): number {
     }
   }
   return a[0] ?? 0.5;
+}
+
+function histGradientBoostingForward(x: number[], model: NonNullable<ModelBundle['hybrid']>['hist_gradient_boosting']): number {
+  let raw = model.baseline;
+  for (const tree of model.trees) {
+    let nodeIndex = 0;
+    while (true) {
+      const node = tree[nodeIndex];
+      if (!node) break;
+      const [isLeaf, featureIndex, threshold, leftIndex, rightIndex, missingGoLeft, leafValue] = node;
+      if (isLeaf === 1) {
+        raw += leafValue;
+        break;
+      }
+      const value = x[featureIndex];
+      const goLeft = Number.isNaN(value) ? missingGoLeft === 1 : value <= threshold;
+      nodeIndex = goLeft ? leftIndex : rightIndex;
+    }
+  }
+  return 1 / (1 + Math.exp(-raw));
 }
 
 function analyzeRiskFactors(applicant: ApplicantFormData): RiskFactor[] {
@@ -340,7 +368,13 @@ export async function predictApplicant(data: ApplicantFormData): Promise<Predict
   let rawProb: number;
   if (useEnsemble) {
     const probs = bundle.ensemble_models.map((m) => forwardPass(x, m));
-    rawProb = probs.reduce((acc, v) => acc + v, 0) / probs.length;
+    const neuralProb = probs.reduce((acc, v) => acc + v, 0) / probs.length;
+    if (bundle.hybrid) {
+      const hgbProb = histGradientBoostingForward(x, bundle.hybrid.hist_gradient_boosting);
+      rawProb = bundle.hybrid.hgb_weight * hgbProb + (1 - bundle.hybrid.hgb_weight) * neuralProb;
+    } else {
+      rawProb = neuralProb;
+    }
   } else {
     rawProb = forwardPass(x, bundle.single_model);
   }
@@ -357,11 +391,13 @@ export async function predictApplicant(data: ApplicantFormData): Promise<Predict
     threshold,
     decision_rule: `P(APTO) >= ${threshold.toFixed(2)} para ${product} => APTO, de lo contrario NO APTO`,
     modelo_utilizado: {
-      nombre: useEnsemble ? 'Ensemble_Top3_Diverso' : 'Single_Best_Model (cfg_c_s42)',
+      nombre: useEnsemble && bundle.hybrid ? 'Híbrido HGB + Ensemble Top-3' : useEnsemble ? 'Ensemble_Top3_Diverso' : 'Single_Best_Model (cfg_c_s42)',
       tipo: useEnsemble
-        ? 'Ensamble de 3 redes neuronales con arquitecturas y activaciones heterogéneas'
+        ? bundle.hybrid
+          ? 'HistGradientBoosting (65%) + ensamble de 3 redes neuronales (35%)'
+          : 'Ensamble de 3 redes neuronales con arquitecturas y activaciones heterogéneas'
         : 'Red neuronal profunda [64, 32, 16] ReLU',
-      pesos: useEnsemble ? 'Ponderación aritmética equiponderada [1/3, 1/3, 1/3]' : '1.0',
+      pesos: useEnsemble ? bundle.hybrid ? '0.65 árboles / 0.35 redes' : 'Ponderación aritmética equiponderada [1/3, 1/3, 1/3]' : '1.0',
     },
     factores_relevantes: analyzeRiskFactors(data),
     disclaimer_academico:
