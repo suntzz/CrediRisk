@@ -80,7 +80,26 @@ negocio; no son valores inventados. No se habilitó crédito hipotecario: el dat
 contiene observaciones hipotecarias etiquetadas, por lo que reutilizar un umbral de
 consumo sería metodológicamente incorrecto.
 
-## 6. Cambios implementados
+## 6. Prueba de balance uniforme de variables
+
+Todas las variables ya entran estandarizadas al modelo y reciben parámetros propios.
+Para comprobar si limitar la dominancia de alguna mejoraba el AUC, se aplicó *feature
+dropout* uniforme durante entrenamiento: cada variable procesada tuvo la misma
+probabilidad de quedar temporalmente enmascarada. No se fijaron pesos manuales, pues
+eso no está respaldado por el dataset.
+
+| Candidato | Tasa uniforme | AUC validation | Brier validation |
+|---|---:|---:|---:|
+| Ensamble base | 0% | **0.75382** | **0.20177** |
+| Feature dropout | 5% | 0.75142 | 0.20300 |
+| Feature dropout | 10% | 0.75144 | 0.20336 |
+
+Las dos variantes redujeron AUC y empeoraron Brier. El resultado respalda mantener
+los pesos aprendidos por el ensamble actual. Los detalles por red y época están en
+`reports/phase6_feature_balance_epochs.csv` y
+`reports/phase6_feature_balance_validation.csv`.
+
+## 7. Cambios implementados
 
 1. Se añadió regularización opcional de ruido de entrada al constructor experimental.
 2. Se creó `phase5_generalization_search.py`, que guarda modelos por semilla,
@@ -90,7 +109,7 @@ consumo sería metodológicamente incorrecto.
 4. No se cambiaron layouts, estilos, rutas ni componentes visuales. Los únicos datos
    enviados a la app estática son los artefactos actualizados del modelo.
 
-## 7. Pruebas realizadas
+## 8. Pruebas realizadas
 
 - Compilación de los módulos Python modificados con `py_compile`.
 - Inferencia directa para Cash loans y Revolving loans, verificando umbrales 0.51 y
@@ -101,7 +120,7 @@ consumo sería metodológicamente incorrecto.
 - Build de producción del frontend con `npm run build`.
 - Verificación de GitHub Pages y del `model_bundle.json` publicado.
 
-## 8. Limitaciones y siguiente paso responsable
+## 9. Limitaciones y siguiente paso responsable
 
 No existe una mejora honesta que pueda garantizarse únicamente cambiando arquitectura
 si los datos no aportan nueva señal predictiva. El siguiente incremento relevante es

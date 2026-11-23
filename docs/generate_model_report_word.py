@@ -191,6 +191,7 @@ def main() -> None:
     epochs = pd.read_csv(REPORTS / "phase5_generalization_epochs.csv")
     test = pd.read_csv(REPORTS / "phase5_generalization_test.csv")
     score32 = pd.read_csv(REPORTS / "phase4_score32_candidate_comparison.csv")
+    feature_balance = pd.read_csv(REPORTS / "phase6_feature_balance_validation.csv")
     build_chart(validation, score32)
 
     document = Document()
@@ -275,6 +276,15 @@ def main() -> None:
     ], widths=[1.2, 0.75, 0.8, 0.8, 0.72, 1.25, 0.65], font_size=8.5)
     paragraph(document, "Cash loans y Revolving loans tienen políticas de umbral independientes. Crédito hipotecario no se activa todavía porque el dataset actual no contiene casos hipotecarios etiquetados para entrenar y validar una política propia.")
 
+    document.add_heading("Prueba de balance uniforme de variables", level=1)
+    paragraph(document, "Todas las variables ya llegan estandarizadas y la red aprende parámetros propios para cada una. Para comprobar si limitar dominancias mejoraba el AUC, cada característica procesada se enmascaró con la misma probabilidad durante el entrenamiento. No se impusieron pesos manuales sin respaldo en los datos.")
+    balance_labels = {"baseline_production": "Ensamble base", "uniform_feature_dropout_05": "Feature dropout 5%", "uniform_feature_dropout_10": "Feature dropout 10%"}
+    add_table(document, ["Candidato", "Tasa uniforme", "AUC validation", "Brier validation"], [
+        [balance_labels[r["candidate"]], f"{float(r['feature_dropout_rate']) * 100:.0f}%", metric(r["auc"]), metric(r["brier"])]
+        for _, r in feature_balance.iterrows()
+    ], widths=[2.4, 1.2, 1.5, 1.5])
+    paragraph(document, "Las variantes de 5% y 10% obtuvieron menos AUC y peor Brier que el ensamble base. Por ello el modelo publicado conserva los pesos aprendidos por los datos.")
+
     document.add_heading("Cambios implementados y verificaciones", level=1)
     for text in [
         "Se añadió ruido gaussiano opcional de entrada para experimentos de regularización. Este ruido actúa únicamente durante entrenamiento.",
@@ -289,7 +299,7 @@ def main() -> None:
         p.add_run("• " + text)
 
     document.add_heading("Archivos reproducibles", level=1)
-    paragraph(document, "Los resultados de este documento pueden verificarse con reports/phase5_generalization_validation.csv, reports/phase5_generalization_epochs.csv, reports/phase5_generalization_test.csv, reports/phase4_score32_candidate_comparison.csv y src/phase5_generalization_search.py. El informe fuente en Markdown está en docs/INFORME_TECNICO_MODELO_FASE5.md.")
+    paragraph(document, "Los resultados de este documento pueden verificarse con reports/phase5_generalization_validation.csv, reports/phase5_generalization_epochs.csv, reports/phase5_generalization_test.csv, reports/phase4_score32_candidate_comparison.csv, reports/phase6_feature_balance_validation.csv y los scripts src/phase5_generalization_search.py y src/phase6_feature_balance.py. El informe fuente en Markdown está en docs/INFORME_TECNICO_MODELO_FASE5.md.")
 
     document.save(OUT)
     print(OUT)

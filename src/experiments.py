@@ -45,6 +45,7 @@ def build_custom_model(
     learning_rate: float = 0.001,
     weight_decay: float = 1e-4,
     input_noise_std: float = 0.0,
+    input_feature_dropout: float = 0.0,
 ) -> keras.Model:
     regularizer = keras.regularizers.l2(l2_reg) if l2_reg > 0 else None
     inputs = keras.Input(shape=(n_features,), name="entrada")
@@ -53,6 +54,11 @@ def build_custom_model(
     # tabulares que reduce coadaptación sin alterar la inferencia ni el contrato.
     if input_noise_std > 0:
         x = keras.layers.GaussianNoise(input_noise_std, name="input_noise")(x)
+    if input_feature_dropout > 0:
+        # Cada característica transformada tiene la misma probabilidad de
+        # enmascararse durante entrenamiento. No fija pesos manuales: obliga a
+        # aprender señales redundantes y se desactiva al predecir.
+        x = keras.layers.Dropout(input_feature_dropout, name="input_feature_dropout")(x)
 
     num_layers = len(layers)
     for idx, units in enumerate(layers):

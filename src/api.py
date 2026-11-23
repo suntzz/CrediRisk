@@ -83,7 +83,7 @@ class ApplicantInput(BaseModel):
     dias_maximo_mora: float = Field(..., ge=0, description="Días máximos de mora registrados")
     porcentaje_pagos_oportunos: Optional[float] = Field(None, ge=0, le=100, description="Porcentaje histórico de pagos cumplidos a tiempo (%)")
     antiguedad_laboral_anios: Optional[float] = Field(None, ge=0, le=70, description="Años en el empleo o actividad actual")
-    patrimonio_indice: float = Field(..., ge=0, le=10, description="Índice sintético de patrimonio (escala 0-10)")
+    patrimonio_indice: float = Field(..., ge=0, le=4, description="Nivel compuesto de respaldo patrimonial (escala 0-4 del dataset)")
     antiguedad_cliente_anios: Optional[float] = Field(None, ge=0, le=70, description="Años como cliente de la entidad")
     linea_negocio: str = Field(..., description="Línea de crédito solicitada (ej. Cash loans, Revolving loans)")
     tipo_contrato: str = Field(..., description="Tipo de contrato laboral o condición de ocupación")

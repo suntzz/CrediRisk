@@ -452,8 +452,8 @@ export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
         errors.patrimonio_indice = 'El índice patrimonial es obligatorio.';
       } else {
         const val = Number(formData.patrimonio_indice);
-        if (isNaN(val) || val < 0 || val > 10) {
-          errors.patrimonio_indice = 'El índice patrimonial debe estar en la escala de 0 a 10.';
+        if (isNaN(val) || val < 0 || val > 4) {
+          errors.patrimonio_indice = 'El nivel de respaldo patrimonial debe estar entre 0 y 4.';
         }
       }
     }
@@ -1482,18 +1482,22 @@ export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
 
                     <div className="sm:col-span-2">
                       <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5 font-sans">
-                        Índice Patrimonial (escala 0 a 10) <span className="text-rose-500">*</span>
+                        Nivel de respaldo patrimonial (0 a 4) <span className="text-rose-500">*</span>
                       </label>
                       <input
                         type="number"
                         name="patrimonio_indice"
                         min="0"
-                        max="10"
+                        max="4"
                         value={formData.patrimonio_indice === '' ? '' : formData.patrimonio_indice}
                         onChange={handleChange}
                         className={getInputClassName('patrimonio_indice', true)}
                         placeholder="Ej. 4"
+                        aria-describedby="patrimonio-ayuda"
                       />
+                      <p id="patrimonio-ayuda" className="mt-1.5 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400 font-sans">
+                        No es un valor en pesos: es una escala compuesta del dataset sobre activos y respaldo patrimonial. 0 es el nivel más bajo y 4 el más alto.
+                      </p>
                       {fieldErrors.patrimonio_indice && (
                         <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1.5 flex items-center gap-1 font-sans animate-in fade-in duration-150">
                           <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
