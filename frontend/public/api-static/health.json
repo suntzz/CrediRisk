@@ -4,7 +4,7 @@
   "dataset_verified_sha256": "19c5b59ccce6face1a0b828d201605aeb0e70b214f7ed60be2efdf13f47f851d",
   "threshold": 0.5,
   "product_threshold_policy": {
-    "version": 1,
+    "version": 2,
     "status": "validated",
     "selection_split": "validation",
     "objective": "balanced_accuracy",
@@ -50,13 +50,9 @@
     "unsupported_products": {
       "Mortgage loans": "No hay registros etiquetados de crédito hipotecario en el dataset actual."
     },
-    "phase": "phase4_score32",
-    "selected_candidate": "baseline_historico",
-    "score_importance": {
-      "method": "permutation_auc_drop_validation",
-      "score_auc_drop": 0.16034072845672756
-    },
-    "test_metrics_file": "reports/phase4_score32_product_test_metrics.csv"
+    "phase": "phase5_generalization",
+    "selected_candidate": "baseline_production",
+    "test_metrics_file": "reports/phase5_generalization_test.csv"
   },
   "ensemble_available": true,
   "single_model_available": true,

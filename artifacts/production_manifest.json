@@ -1,7 +1,7 @@
 {
-  "ensemble_name": "Ensemble_Top3_Diverso_phase4_score32",
-  "source_candidate": "baseline_historico",
-  "weights": "Promedio aritmético simple (1/3 cada uno)",
+  "ensemble_name": "CrediRisk_phase5_generalization",
+  "source_candidate": "baseline_production",
+  "weights": "Promedio simple",
   "models": [
     {
       "file": "ensemble_models/cfg_c_s42.keras",

@@ -1,8 +1,8 @@
 {
-  "version": 1,
+  "version": 2,
   "status": "validated",
-  "phase": "phase4_score32",
-  "selected_candidate": "baseline_historico",
+  "phase": "phase5_generalization",
+  "selected_candidate": "baseline_production",
   "selection_split": "validation",
   "objective": "balanced_accuracy",
   "default_threshold": 0.5,
@@ -47,9 +47,5 @@
   "unsupported_products": {
     "Mortgage loans": "No hay registros etiquetados de crédito hipotecario en el dataset actual."
   },
-  "score_importance": {
-    "method": "permutation_auc_drop_validation",
-    "score_auc_drop": 0.16034072845672756
-  },
-  "test_metrics_file": "reports/phase4_score32_product_test_metrics.csv"
+  "test_metrics_file": "reports/phase5_generalization_test.csv"
 }

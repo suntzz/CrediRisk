@@ -44,10 +44,15 @@ def build_custom_model(
     optimizer_name: str = "Adam",
     learning_rate: float = 0.001,
     weight_decay: float = 1e-4,
+    input_noise_std: float = 0.0,
 ) -> keras.Model:
     regularizer = keras.regularizers.l2(l2_reg) if l2_reg > 0 else None
     inputs = keras.Input(shape=(n_features,), name="entrada")
     x = inputs
+    # Activo solo durante entrenamiento: una regularización ligera para datos
+    # tabulares que reduce coadaptación sin alterar la inferencia ni el contrato.
+    if input_noise_std > 0:
+        x = keras.layers.GaussianNoise(input_noise_std, name="input_noise")(x)
 
     num_layers = len(layers)
     for idx, units in enumerate(layers):
