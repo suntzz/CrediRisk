@@ -164,7 +164,7 @@ steps = [("Producción (hoy)", PROD)]
 if fix is not None:
     steps.append(("Redes: arreglo de imputación", [(0.65, base, "hgb"), (0.35, fix, "fix_neural")]))
 if v2 is not None:
-    steps.append(("Redes: arreglo de imputación + razones", [(0.65, base, "hgb"), (0.35, v2, "v2_neural")]))
+    steps.append(("Redes: + razones entre variables", [(0.65, base, "hgb"), (0.35, v2, "v2_neural")]))
 net_now = steps[-1][1][1][1:]
 steps += [
     ("Árbol sobre datos crudos", [(0.65, lab, "crudo_A"), (0.35, *net_now)]),

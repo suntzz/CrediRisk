@@ -1,0 +1,9 @@
+{
+  "candidato": "mlp_fix",
+  "filas_dev": 42202,
+  "pliegues": 5,
+  "repeticiones": 1,
+  "semilla_cv": 20261123,
+  "segundos": 487,
+  "nota": "La prueba vieja (7.448 filas) no se usa en este protocolo."
+}

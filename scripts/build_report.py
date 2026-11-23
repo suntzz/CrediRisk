@@ -274,7 +274,9 @@ def bloque_imputacion(I, C):
     if C:
         for r in C:
             if "imput" in r.get("etiqueta", "").lower():
-                efecto = f" Arreglarlo en las redes (junto con las razones) sumó {f_auc(num(r.get('aporte')), True)} de AUC al híbrido."
+                sig = str(r.get("significativo", "")).lower() == "true"
+                efecto = (f" Arreglarlo sumó {f_auc(num(r.get('aporte')), True)} de AUC al híbrido"
+                          + ("." if sig else " (no significativo). En las redes solas sí sube de forma significativa."))
     r0 = I[0]
     mal0 = num(r0.get("valor_que_recibia"))
     mal0 = f_miles(mal0) if mal0 is not None and abs(mal0) >= 1000 else f_dec(mal0, 0)
@@ -469,13 +471,23 @@ def bloque_estres(S, G):
     return seccion("estres", tit, "".join(f'<div class="graf">{p}</div>' for p in partes), texto)
 
 
+DIRP = None
+
+
 def bloque_umbrales(U):
     tit = "Qué umbral usar depende de cuánto cuesta un mal cliente."
+    lc = leer(DIRP, "v2_curva_aprendizaje.csv") if DIRP else None
+    curva = ""
+    if lc and len(lc) >= 2:
+        a, b = lc[-2], lc[-1]
+        curva = (f' Duplicar los datos de entrenamiento ({f_miles(num(a.get("filas_entrenamiento")))} → '
+                 f'{f_miles(num(b.get("filas_entrenamiento")))} filas) subió el AUC solo '
+                 f'{f_auc(num(b.get("auc")) - num(a.get("auc")), True)}: harían falta varias veces más filas para 0,77.')
     techo = ('<aside class="techo"><h3>¿Y por qué no 0,78?</h3>'
              '<p>El CSV es la base pública <em>Home Credit Default Risk</em> recortada '
              '(el id 100002 coincide fila a fila: ingreso 202.500, monto 406.597,5, '
-             'cuota 24.700,5, incumplió). Con estas 23 columnas el techo observado es '
-             '~0,76–0,77; llegar a 0,78 exige traer columnas de fuera, y la regla de la '
+             'cuota 24.700,5, incumplió). Con estas 23 columnas lo mejor medido es 0,7617.' + curva +
+             ' Llegar a 0,78 exige traer columnas de fuera, y la regla de la '
              'competencia no lo permite.</p></aside>')
     if not U:
         return seccion("umbrales", tit, pendiente("umbrales_por_costo.csv") + techo, "")
@@ -653,6 +665,8 @@ footer{color:var(--suave);font-size:.8rem;margin-top:24px}
 
 
 def construir(dirp: Path) -> str:
+    global DIRP
+    DIRP = dirp
     R = resumen_dict(leer(dirp, "v2_resumen.csv"))
     C = leer(dirp, "v2_cascada.csv")
     I = leer(dirp, "v2_imputacion.csv")
