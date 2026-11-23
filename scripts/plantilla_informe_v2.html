@@ -1,0 +1,417 @@
+<title>CrediRisk v2</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Retícula de 12 columnas: texto en 5, gráfica en 7; en pantallas angostas se apilan. Grafito frío, un solo acento cobalto para «lo nuevo». */
+:root{
+  --bg:#eceef1; --paper:#f7f8f9; --ink:#22262d; --ink-2:#3d434d; --ink-3:#6b7280;
+  --line:#d5d9df; --gray:#9aa0aa; --band:#dfe3e8;
+  --accent:#3358b0; --accent-soft:#ccd7f0; --bad:#b4501f;
+  --f-head:"Schibsted Grotesk","Helvetica Neue",Arial,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#1b1d21; --paper:#22252a; --ink:#dde0e5; --ink-2:#b6bcc6; --ink-3:#8a919c;
+  --line:#33373f; --gray:#6f7682; --band:#2c3038;
+  --accent:#8faef5; --accent-soft:#2e3b5c; --bad:#e9875a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1b1d21; --paper:#22252a; --ink:#dde0e5; --ink-2:#b6bcc6; --ink-3:#8a919c;
+  --line:#33373f; --gray:#6f7682; --band:#2c3038;
+  --accent:#8faef5; --accent-soft:#2e3b5c; --bad:#e9875a; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17.5px;line-height:1.7;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 64px}
+.wrap{max-width:1180px;margin:0 auto}
+.grid12{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:28px;row-gap:20px}
+h1,h2,h3{font-family:var(--f-head);text-wrap:balance;margin:0;letter-spacing:-.01em}
+p{margin:0}
+.eyebrow{font-family:var(--f-mono);font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.num,.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+strong{font-weight:700}
+em{font-style:normal;color:var(--accent);font-weight:600}
+
+/* Portada */
+header.hero{padding-block:56px 40px;border-bottom:1px solid var(--line)}
+header.hero h1{grid-column:1/-1;font-size:clamp(32px,5vw,56px);line-height:1.05;font-weight:800;max-width:17ch;margin-top:12px}
+header.hero .lede{grid-column:1/span 7;font-size:18.5px;color:var(--ink-2);max-width:60ch}
+.kpis{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin-top:24px;border-top:1px solid var(--line)}
+.kpi{padding:22px 24px 4px 0}
+.kpi + .kpi{padding-left:24px;border-left:1px solid var(--line)}
+.heroc{margin-top:18px}
+.chart.heroc svg{min-width:0}
+.heroc.cel{display:none}
+.answers{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.ans{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.ans p{font-size:16px;color:var(--ink-2);line-height:1.55;flex:1}
+.ans .go{font-family:var(--f-mono);font-size:12px;color:var(--accent)}
+.errs{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;background:var(--paper)}
+.err{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;padding:12px 16px;font-size:14.5px}
+.err + .err{border-top:1px solid var(--line)}
+.err .was{color:var(--ink-2)} .err .fix{color:var(--ink)}
+.err .fix::before{content:"→ ";color:var(--accent);font-weight:600}
+.reasons{display:flex;flex-direction:column;gap:12px;margin:0;padding:0;list-style:none;counter-reset:r}
+.reasons li{counter-increment:r;display:grid;grid-template-columns:28px minmax(0,1fr);gap:4px;color:var(--ink-2)}
+.reasons li::before{content:counter(r);font-family:var(--f-mono);color:var(--accent);font-weight:500}
+.reasons strong{color:var(--ink)}
+.kpi .k{font-size:13.5px;color:var(--ink-2);font-weight:500}
+.kpi .v{font-family:var(--f-head);font-weight:700;font-size:clamp(28px,3.6vw,44px);line-height:1.15;margin-top:6px;white-space:nowrap}
+.kpi .v .was{color:var(--gray);font-weight:500}
+.kpi .v .arrow{color:var(--ink-3);font-weight:400;margin:0 .18em}
+.kpi .v .now{color:var(--accent)}
+.kpi .s{font-size:13.5px;color:var(--ink-3);margin-top:4px}
+
+/* Secciones */
+section.blk{padding-block:56px;border-bottom:1px solid var(--line)}
+.txt{grid-column:1/span 5;display:flex;flex-direction:column;gap:14px;min-width:0}
+.fig{grid-column:6/span 7;min-width:0;display:flex;flex-direction:column;gap:14px}
+.blk h2{font-size:clamp(23px,2.4vw,30px);line-height:1.18;font-weight:700}
+.txt p{color:var(--ink-2);max-width:62ch}
+.txt p.clave{font-family:var(--f-head);font-weight:500;font-size:clamp(19px,1.7vw,22.5px);line-height:1.45;color:var(--ink);letter-spacing:-.005em}
+.clave b{color:var(--accent);font-weight:700}
+.txt p strong{color:var(--ink)}
+.theory{border-left:3px solid var(--accent-soft);padding:2px 0 2px 16px;font-size:16px;line-height:1.65;color:var(--ink-2)}
+.theory .eyebrow{display:block;margin-bottom:4px}
+.formula{font-family:var(--f-mono);font-size:14.5px;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:10px 14px;color:var(--ink);overflow-wrap:anywhere}
+.chart{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:18px 18px 12px;overflow-x:auto}
+.chart svg{display:block;width:100%;height:auto;min-width:560px}
+.note{font-size:15px;line-height:1.6;color:var(--ink-3)}
+
+/* Elementos SVG, todos por tokens */
+svg text{font-family:var(--f-body)}
+.grid{stroke:var(--line);stroke-width:1}
+.ax0{stroke:var(--ink-3);stroke-width:1.2}
+.tick{fill:var(--ink-3);font-family:var(--f-mono)!important;font-size:12.5px}
+.cap{fill:var(--ink-3);font-size:13px}
+.rowl{fill:var(--ink);font-size:14.5px}
+.rowl.sm,.num.sm{font-size:13px}
+.dim{fill:var(--ink-3)!important}
+svg .num{fill:var(--ink);font-family:var(--f-mono)!important;font-size:13.5px}
+.acc{fill:var(--accent)} .mute{fill:var(--gray)}
+.ci{stroke:var(--ink);stroke-width:1.4}
+.band{fill:var(--band)}
+.bad{stroke:var(--bad);stroke-width:2;stroke-dasharray:5 4} .badt{fill:var(--bad);font-size:13px;font-weight:600;font-family:var(--f-mono)!important} .badf,.badc{fill:var(--bad)}
+.line{fill:none;stroke:var(--ink-3);stroke-width:1.6}
+.accc{fill:var(--accent);stroke:var(--paper);stroke-width:2}
+.mutec{fill:var(--gray);stroke:var(--paper);stroke-width:2}
+.dot{fill:var(--ink-3)}
+.tie{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.5}
+.ref{stroke:var(--gray);stroke-width:1.2;stroke-dasharray:4 4}
+.ann{fill:var(--ink-2);font-size:14px}
+.acct{fill:var(--accent);font-weight:700}
+.grp{fill:var(--ink-3);font-family:var(--f-mono)!important;font-size:11px;letter-spacing:.08em}
+.dl{stroke:var(--gray);stroke-width:2.5}
+
+/* Leyenda mínima y fichas */
+.key{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13.5px;color:var(--ink-2)}
+.key span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:7px;vertical-align:-1px;background:var(--c)}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.fact{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:12px 14px;min-width:0}
+.fact .k{font-size:12.5px;color:var(--ink-3)}
+.fact .v{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:17px;margin-top:2px}
+.fact .v .now{color:var(--accent)} .fact .v .was{color:var(--ink-3)}
+
+/* Flujo de la medición */
+.flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;counter-reset:f}
+.step{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:14px;min-width:0;position:relative}
+.step .big{font-family:var(--f-head);font-weight:700;font-size:22px;font-variant-numeric:tabular-nums}
+.step .lab{font-size:13.5px;color:var(--ink-2);margin-top:4px;line-height:1.45}
+.step.apart{background:transparent;border-style:dashed}
+
+/* Tablas */
+.tw{overflow-x:auto;background:var(--paper);border:1px solid var(--line);border-radius:10px}
+.tb{border-collapse:collapse;width:100%;font-size:15.5px;min-width:560px}
+.tb th{text-align:left;font-weight:500;font-size:12.5px;color:var(--ink-3);padding:11px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tb td{padding:10px 14px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;vertical-align:top}
+.tb tr:last-child td{border-bottom:0}
+.tb td:nth-child(n+3){font-family:var(--f-mono);font-size:14px}
+.tb .ci{color:var(--ink-3);font-size:12.5px;white-space:nowrap}
+.tb.cfg td:nth-child(4){font-family:var(--f-body);color:var(--ink-2);font-size:14px}
+.tb .old{color:var(--ink-3)} .tb .new{color:var(--accent);font-weight:500}
+.tb tbody tr:nth-child(3n) td{border-bottom-color:var(--ink-3)}
+.tb.cfg tbody tr td{border-bottom-color:var(--line)}
+.tb.vs td{font-family:var(--f-body)!important;font-size:15px}
+.tb.vs td.old{color:var(--ink-3)} .tb.vs td.new{color:var(--ink);font-weight:700}
+.tb.vs tbody tr td{border-bottom-color:var(--line)}
+.tb.vs tr.gh th{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);padding-top:16px;background:transparent}
+.tb.vs tbody:first-of-type tr.gh th{padding-top:11px}
+@page{size:A4;margin:14mm 14mm 16mm}
+@media print{
+  section.blk{break-before:page;border-bottom:0}
+  h2,.clave,.eyebrow{break-after:avoid}
+  details{break-before:page}
+  :root{--bg:#ffffff;--paper:#ffffff}
+  body{font-size:15px;padding:0;zoom:.74}
+  .wrap{max-width:none}
+  header.hero,section.blk{break-inside:auto}
+  .chart,.tw,.theory,.flow,.answers,.errs,.facts,.kpis,.tb tr{break-inside:avoid}
+  section.blk{padding-block:28px}
+  .txt,.fig,header.hero .lede{grid-column:1/-1}
+  .heroc.cel{display:none!important}.heroc.wide{display:block!important}
+  .chart{overflow:visible} .chart svg{min-width:0}
+  .tw{overflow:visible} .tb{min-width:0}
+  details > .det{display:grid}
+  summary::after{content:""}
+}
+
+/* Detalle plegable */
+details{margin-top:48px;background:var(--paper);border:1px solid var(--line);border-radius:10px}
+summary{cursor:pointer;padding:18px 22px;font-family:var(--f-head);font-weight:700;font-size:19px;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";float:right;font-family:var(--f-mono);color:var(--ink-3)}
+details[open] summary::after{content:"−"}
+summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:10px}
+.det{padding:0 22px 22px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 36px;font-size:15px;color:var(--ink-2)}
+.det h3{font-size:15px;color:var(--ink);margin-bottom:6px}
+.det ul{margin:0;padding-left:18px} .det li{margin:3px 0}
+.det code{font-family:var(--f-mono);font-size:13px;background:var(--band);padding:1px 5px;border-radius:4px;word-break:break-all}
+footer{margin-top:28px;font-size:13.5px;color:var(--ink-3)}
+
+@media (max-width:1020px){
+  .txt,.fig,header.hero .lede{grid-column:1/-1}
+}
+@media (max-width:640px){
+  body{font-size:16px}
+  .kpis{grid-template-columns:1fr}
+  .kpi,.kpi + .kpi{padding:16px 0 8px;border-left:0}
+  .kpi + .kpi{border-top:1px solid var(--line)}
+  .heroc.wide{display:none} .heroc.cel{display:block}
+  .facts,.answers{grid-template-columns:1fr}
+  .err{grid-template-columns:1fr;gap:4px}
+  .flow{grid-template-columns:1fr 1fr}
+  .det{grid-template-columns:1fr}
+  section.blk{padding-block:40px}
+  .grid12{column-gap:0}
+}
+</style>
+
+<div class="wrap">
+
+<header class="hero grid12">
+  <div class="eyebrow" style="grid-column:1/-1">CrediRisk · mejora del modelo de incumplimiento · noviembre 2026</div>
+  <h1>Buscábamos 0,78. Llegamos a {{auc1}} y sabemos por qué no más.</h1>
+  <p class="lede">El modelo estaba en 0,75. Esta vuelta cambió cómo se mide, arregló errores del preprocesamiento, rehízo el árbol y bajó la dependencia del score, sin tocar la arquitectura: un árbol de gradient boosting y tres redes neuronales.</p>
+  <div class="chart heroc wide" style="grid-column:1/-1">{{meta}}</div>
+  <div class="chart heroc cel" style="grid-column:1/-1">{{meta_cel}}</div>
+  <div class="answers">
+    <div class="ans"><div class="eyebrow">Qué hicimos distinto</div><p>Decidir todo con validación cruzada, no con la prueba. Rehacer el árbol: datos crudos, árboles más simples y lentos, 5 semillas. Buscar los pesos en vez de fijarlos a mano. Mezclar un modelo sin score.</p><div class="go">secciones 1, 4 y 5</div></div>
+    <div class="ans"><div class="eyebrow">Qué arreglamos</div><p>Los vacíos se llenaban con un número fuera de escala. El árbol recibía datos ya transformados para las redes. La prueba se había consultado más de 15 veces. Los umbrales ignoraban la mora real.</p><div class="go">secciones 3 y 7</div></div>
+    <div class="ans"><div class="eyebrow">Por qué no 0,78</div><p>El dataset es Home Credit recortado a 23 columnas. Duplicar los datos sube apenas 4,6 milésimas. La información que falta para 0,78 está en columnas que la competencia no permite traer.</p><div class="go">sección 8</div></div>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><div class="k">AUC en validación cruzada</div><div class="v"><span class="was">{{auc0}}</span><span class="arrow">→</span><span class="now">{{auc1}}</span></div><div class="s">{{dmil}} milésimas · intervalo {{ci}}</div></div>
+    <div class="kpi"><div class="k">Dependencia del score</div><div class="v"><span class="was">{{dep0}}</span><span class="arrow">→</span><span class="now">{{dep1}}</span></div><div class="s">qué parte del AUC se pierde sin el score</div></div>
+    <div class="kpi"><div class="k">AUC en la prueba apartada</div><div class="v"><span class="was">{{pr0}}</span><span class="arrow">→</span><span class="now">{{pr1}}</span></div><div class="s">{{t_n}} clientes, mirada una sola vez</div></div>
+  </div>
+</header>
+
+<!-- 0 · Viejo frente a nuevo -->
+<section class="blk grid12">
+  <div class="txt">
+    <div class="eyebrow">Lado a lado</div>
+    <h2>Modelo viejo frente a modelo nuevo</h2>
+    <p class="clave">Misma arquitectura, mejores números en todas las filas de resultados. Lo que cambió es cómo se prepara, se pesa y se decide.</p>
+    <p>Todas las cifras de resultados son de validación cruzada, salvo la prueba apartada. Las secciones siguientes explican cada cambio.</p>
+  </div>
+  <div class="fig"><div class="tw">{{vs}}</div></div>
+</section>
+
+<!-- 1 · Cómo se midió -->
+<section class="blk grid12">
+  <div class="txt">
+    <div class="eyebrow">1 · Cómo se mide</div>
+    <h2>Cada cifra sale de clientes que el modelo no había visto</h2>
+    <p class="clave">Una mejora solo cuenta si su intervalo del 95 % no toca el cero, medido sobre <b>42.202 clientes</b> que el modelo no vio al entrenar.</p>
+    <p>Antes, los candidatos se comparaban contra la misma prueba una y otra vez. Con más de 15 intentos, el que gana ahí puede haber ganado por suerte. Ahora <strong>todas las decisiones se toman con validación cruzada</strong> y la prueba se usa una sola vez, al final.</p>
+    <div class="theory"><span class="eyebrow">Teoría</span>El AUC es la probabilidad de que, al tomar un cliente que incumplió y otro que pagó, el modelo le dé más riesgo al que incumplió. 0,5 es azar; 1 es perfecto. Una milésima es 0,001 de AUC.</div>
+    <div class="theory"><span class="eyebrow">Teoría</span><strong>Bootstrap pareado:</strong> se remuestrean las mismas filas 2.000 veces y en cada muestra se calcula la diferencia entre los dos modelos. Así el intervalo refleja la variación real de los datos.</div>
+  </div>
+  <div class="fig">
+    <div class="flow">
+      <div class="step"><div class="big num">42.202</div><div class="lab">clientes de entrenamiento y validación, 50 % incumplió</div></div>
+      <div class="step"><div class="big num">5 × 3</div><div class="lab">pliegues estratificados por resultado y producto, repetidos con 3 semillas</div></div>
+      <div class="step"><div class="big num">sin fugas</div><div class="lab">cada cliente recibe la predicción de un modelo entrenado sin él; el preprocesamiento se ajusta dentro de cada pliegue</div></div>
+      <div class="step"><div class="big num">2.000</div><div class="lab">remuestreos pareados para cada comparación</div></div>
+      <div class="step apart" style="grid-column:1/-1"><div class="big num">7.448</div><div class="lab">clientes de la prueba original, apartados. Se miraron una vez con el modelo ya elegido: {{pr0}} → {{pr1}}, diferencia {{t_diff}} milésimas ({{t_ci}}). El equipo ya había usado esta prueba antes, así que el número confiable es el de validación cruzada.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 2 · Cascada -->
+<section class="blk grid12">
+  <div class="txt">
+    <div class="eyebrow">2 · De dónde salió la mejora</div>
+    <h2>Casi toda la ganancia viene del árbol y de su peso en la mezcla</h2>
+    <p class="clave">Total: <b>{{dmil}} milésimas</b>. El árbol nuevo aporta +1,2 y darle 90 % del peso, +0,8.</p>
+    <p>Cada fila agrega un cambio sobre la anterior. En color, los cambios cuyo intervalo no toca el cero.</p>
+    <p>Los cambios en gris no son significativos solos, pero no restan y preparan los siguientes: el árbol con razones es la base sobre la que se ajustó la configuración nueva.</p>
+    
+  </div>
+  <div class="fig">
+    <div class="key"><span style="--c:var(--accent)">significativo</span><span style="--c:var(--gray)">no significativo</span></div>
+    <div class="chart">{{cascada}}</div>
+  </div>
+</section>
+
+<!-- 3 · Imputación -->
+<section class="blk grid12">
+  <div class="txt">
+    <div class="eyebrow">3 · Qué estaba mal</div>
+    <h2>Los vacíos se llenaban con un número fuera de escala</h2>
+    <p class="clave">Un vacío en el saldo recibía <b>{{saldo_wrong}}</b> en una escala que va de 0 a {{saldo_p99}}.</p>
+    <p>El preprocesamiento calculaba la mediana en pesos y la aplicaba <strong>después</strong> de pasar la variable a logaritmo. Un cliente sin dato de saldo recibía {{saldo_wrong}}, cuando en esa escala lo normal va de 0 a {{saldo_p99}} y la mediana correcta es {{saldo_med}}. Al {{saldo_vac}} % de los clientes le faltaba ese dato.</p>
+    <div class="formula">log(1 + saldo) → llenar vacíos con mediana(saldo en pesos)</div>
+    <p>Al arreglarlo, <strong>las redes solas suben {{red_fix}} milésimas</strong> ({{red_fix_ci}}). En el híbrido el efecto casi desaparece ({{hyb_fix}}), porque el árbol ya cargaba con casi todo el peso y no usa ese preprocesamiento.</p>
+  </div>
+  <div class="fig">
+    <div class="key"><span style="--c:var(--band)">rango normal (percentil 1 a 99)</span><span style="--c:var(--accent)">mediana correcta</span><span style="--c:var(--bad)">lo que recibía</span></div>
+    <div class="chart">{{imputacion}}</div>
+    <p class="note">Las flechas salen del gráfico: el valor que recibía queda miles de veces más allá del borde derecho.</p>
+    <div class="eyebrow">Los otros errores que encontramos</div>
+    <div class="errs">
+      <div class="err"><div class="was">El árbol recibía los datos imputados, escalados y en one-hot que se habían preparado para las redes.</div><div class="fix">Ahora ve las variables crudas, con vacíos y categorías nativas.</div></div>
+      <div class="err"><div class="was">El peso 0,65 árbol / 0,35 redes estaba fijado a mano.</div><div class="fix">Se busca en una rejilla de 0,05 sobre la validación cruzada: 0,90.</div></div>
+      <div class="err"><div class="was">La prueba se había consultado con más de 15 candidatos.</div><div class="fix">Las decisiones salen de la validación cruzada; la prueba se mira una vez.</div></div>
+      <div class="err"><div class="was">La dependencia del score (68 %) se había medido sobre otro modelo, no sobre el de producción.</div><div class="fix">Medida sobre el híbrido real: {{dep0}}.</div></div>
+      <div class="err"><div class="was">Umbrales elegidos por exactitud en datos 50/50 y sin calibrar.</div><div class="fix">Umbrales por costo, con probabilidad calibrada y mora real (sección 7).</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 · El árbol -->
+<section class="blk grid12">
+  <div class="txt">
+    <div class="eyebrow">4 · El árbol nuevo</div>
+    <h2>Muchos árboles pequeños y pacientes generalizan mejor</h2>
+    <p class="clave">Árboles de <b>15 hojas</b> en vez de 31, pasos de <b>0,02</b> en vez de 0,04 y <b>5 semillas</b> promediadas.</p>
+    <div class="theory"><span class="eyebrow">Teoría</span><strong>Gradient boosting</strong> suma árboles uno tras otro; cada uno corrige el error que dejaron los anteriores. Con árboles más simples y pasos más cortos, el modelo necesita más árboles, pero cada uno aprende menos ruido.</div>
+    <p><strong>Datos crudos.</strong> El árbol de producción recibía los datos ya imputados, escalados y en one-hot. Ahora recibe las variables tal cual: el HistGradientBoosting maneja los vacíos y las categorías por su cuenta.</p>
+    <p><strong>Razones.</strong> Doce cocientes armados solo con columnas del dataset: monto/ingreso, cuota/ingreso, saldo/ingreso, costo total del crédito, mora por crédito, ingreso por persona a cargo, entre otros. Ninguno usa el score.</p>
+    <p><strong>Semillas.</strong> Promediar árboles entrenados con distinta semilla reduce la varianza: 3 semillas suman {{sem}} milésimas frente a una. El modelo final usa 5.</p>
+  </div>
+  <div class="fig">
+    <div class="tw">{{cfg}}</div>
+    <div class="chart">{{peso}}</div>
+    <p class="note">Producción mezclaba 65 % árbol y 35 % redes, un peso fijado a mano. Con la búsqueda, el mejor es 90 %. Las redes solas no suman de forma significativa frente al árbol ({{redes_vs_arbol}} milésimas), pero se quedan con el 10 % porque la arquitectura es híbrida.</p>
+  </div>
+</section>
+
+<!-- 5 · Menos score -->
+<section class="blk grid12">
+  <div class="txt">
+    <div class="eyebrow">5 · Menos dependencia del score</div>
+    <h2>Mezclar un modelo sin score baja la dependencia casi gratis</h2>
+    <p class="clave">Con 15 % de un modelo sin score, la dependencia baja de {{dep0}} a <b>{{dep1}}</b> y el AUC sigue por encima de producción.</p>
+    <p>Un modelo que confía casi todo en el score crediticio se cae si el score falta o llega mal. Entrenamos un segundo modelo híbrido <strong>sin el score</strong> y mezclamos los dos.</p>
+    <div class="formula">dependencia = (AUC − AUC con score barajado) / (AUC − 0,5)</div>
+    <p><strong>Regla de elección:</strong> entre las mezclas cuyo AUC no es significativamente menor que el de la mejor (puntos claros), tomar la de menor dependencia. Esa es <em>85 % con score y 15 % sin score</em>: dependencia {{dep1}} y AUC {{auc1}}, ambos mejores que producción.</p>
+  </div>
+  <div class="fig">
+    <div class="key"><span style="--c:var(--accent)">elegido</span><span style="--c:var(--accent-soft)">empatado con el mejor</span><span style="--c:var(--ink-3)">peor que el mejor</span><span style="--c:var(--gray)">producción</span></div>
+    <div class="chart">{{trade}}</div>
+    <p class="note">Bajar de 85 % es posible, pero cada punto cuesta AUC. Por debajo de 65 % con score el modelo ya rinde menos que producción.</p>
+  </div>
+</section>
+
+<!-- 6 · Robustez -->
+<section class="blk grid12">
+  <div class="txt">
+    <div class="eyebrow">6 · Dónde aguanta</div>
+    <h2>Gana en todos los segmentos medidos y en los cinco pliegues</h2>
+    <p class="clave">Mejor en los <b>5 de 5</b> pliegues y en todos los segmentos medidos. Cae menos cuando el score falla.</p>
+    <p>La mejora no viene de un grupo en particular. En efectivo es significativa: <strong>{{cash}} milésimas</strong> ({{cash_ci}}). En rotativo también sube, {{rev}}, pero con 3.478 clientes el intervalo toca el cero ({{rev_ci}}).</p>
+    <p>Si se daña el score, el modelo nuevo cae menos que el de producción, sobre todo cuando el score llega revuelto entre clientes.</p>
+    <div class="theory"><span class="eyebrow">Teoría</span><strong>Calibración:</strong> si el modelo dice 30 %, deberían incumplir 3 de cada 10. El error de calibración esperado (ECE) mide esa distancia. Con calibración isotónica baja de {{ece_raw}} a {{ece1}} (producción: {{ece0}}).</div>
+  </div>
+  <div class="fig">
+    <div class="chart">{{dumb}}</div>
+    <div class="chart">{{estres}}</div>
+  </div>
+</section>
+
+<!-- 7 · Umbrales -->
+<section class="blk grid12">
+  <div class="txt">
+    <div class="eyebrow">7 · De probabilidad a decisión</div>
+    <h2>El umbral sale de cuánto cuesta un mal crédito, no de la exactitud</h2>
+    <p class="clave">Si un mal crédito cuesta 10 veces lo que deja uno bueno, en efectivo se aprueba el <b>70 %</b> con <b>4 %</b> de mora.</p>
+    <p>Antes, el umbral se elegía maximizando exactitud en datos 50/50. Eso no corresponde a ningún banco: en la realidad incumple el <strong>8,07 %</strong>, y un mal crédito cuesta mucho más de lo que deja uno bueno.</p>
+    <div class="theory"><span class="eyebrow">Teoría</span>Si un cliente bueno deja 1 y uno malo cuesta c, aprobar conviene cuando la probabilidad de pago supera c / (1 + c). Para eso la probabilidad tiene que estar calibrada y corregida a la mora real.</div>
+    <div class="formula">aprobar si P(paga) ≥ c / (1 + c)</div>
+    <p class="note">El crédito hipotecario sigue bloqueado: la política solo admite efectivo y rotativo.</p>
+  </div>
+  <div class="fig">
+    <div class="tw">{{umbrales}}</div>
+    <p class="note">El costo se expresa en veces la ganancia de un crédito bueno. Entre paréntesis, el intervalo del 95 % por bootstrap. Mora y aprobación ya corregidas a la mora real del 8,07 %.</p>
+  </div>
+</section>
+
+<!-- 8 · Techo -->
+<section class="blk grid12">
+  <div class="txt">
+    <div class="eyebrow">8 · Por qué no 0,78</div>
+    <h2>A 0,78 no se llega afinando el modelo: falta información en los datos</h2>
+    <p class="clave">Faltan <b>18 milésimas</b> y duplicar los datos solo da {{lc_last}}. Lo que falta está en columnas que no se pueden usar.</p>
+    <p>Un AUC tiene un techo que ponen los datos, no el algoritmo. Si dos clientes se ven iguales en las 23 columnas y uno paga y el otro no, ningún modelo puede separarlos. Tres pruebas dicen que estamos cerca de ese techo:</p>
+    <ol class="reasons">
+      <li><span><strong>Más datos casi no ayudan.</strong> Al duplicar las filas el AUC sube {{lc_last}} milésimas, y ya usamos todas. Para pasar de 0,762 a 0,78 harían falta 18 milésimas.</span></li>
+      <li><span><strong>Modelos muy distintos llegan al mismo sitio.</strong> El árbol y las redes, entrenados por separado, empatan: sumar las redes al árbol no mejora de forma significativa ({{redes_vs_arbol}} milésimas). Cuando todos se detienen en el mismo punto, el límite está en los datos.</span></li>
+      <li><span><strong>El dataset es Home Credit recortado.</strong> El cliente 100002 coincide fila a fila con la base pública Home Credit Default Risk, que trae muchas más columnas y tablas de historial. Recuperarlas cruzando el identificador subiría el AUC, pero <strong>las reglas de la competencia no lo permiten</strong>, y no lo hicimos.</span></li>
+    </ol>
+    <p class="note">Quedaron sin probar otras configuraciones del árbol, variables de vecinos cercanos y una búsqueda automática de hiperparámetros. Por lo que muestra la curva, cada una sumaría a lo sumo una o dos milésimas.</p>
+  </div>
+  <div class="fig">
+    <div class="chart">{{lc}}</div>
+    <div class="facts">
+      <div class="fact"><div class="k">AUC si falta el score</div><div class="v"><span class="was">{{vac0}}</span> → <span class="now">{{vac1}}</span></div></div>
+      <div class="fact"><div class="k">Dependencia en la prueba</div><div class="v"><span class="was">{{tdep0}}</span> → <span class="now">{{tdep1}}</span></div></div>
+      <div class="fact"><div class="k">Prueba sin score</div><div class="v"><span class="was">{{tvac0}}</span> → <span class="now">{{tvac1}}</span></div></div>
+    </div>
+  </div>
+</section>
+
+<details>
+  <summary>Detalle técnico y archivos</summary>
+  <div class="det">
+    <div>
+      <h3>Modelo final</h3>
+      <ul>
+        <li>final = 0,85 × (0,90 árbol + 0,10 redes, con score) + 0,15 × (0,90 árbol + 0,10 redes, sin score).</li>
+        <li>Árbol: HistGradientBoosting sobre variables crudas + 12 razones, 5 semillas (42, 7, 2026, 1, 21).</li>
+        <li>Redes: las 3 MLP de producción (64-32-16, 32-16 y 64-32-16) con el preprocesador corregido y las razones.</li>
+        <li>Entrenado con los 42.202 clientes de entrenamiento y validación.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Protocolo</h3>
+      <ul>
+        <li>Validación cruzada estratificada por resultado × producto, 5 pliegues × 3 repeticiones. Las redes nuevas, por tiempo, con 1 repetición: las mezclas con ellas usan la repetición 0 de todo.</li>
+        <li>Preprocesamiento ajustado dentro de cada pliegue, sin fugas.</li>
+        <li>Bootstrap pareado con 2.000 remuestreos e intervalo percentil del 95 %.</li>
+        <li>Producción en la prueba se entrenó solo con entrenamiento; el modelo nuevo, con entrenamiento + validación.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Reglas que se respetaron</h3>
+      <ul>
+        <li>Solo el CSV común de la competencia; nada externo.</li>
+        <li><code>id_solicitud</code> e <code>INCUMPLIO_PAGO</code> nunca son variables.</li>
+        <li>Producción intacta: todo lo nuevo vive en <code>artifacts/v2/</code>.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Archivos (rama mejora-auc)</h3>
+      <ul>
+        <li><code>src/cv_protocol.py</code>, <code>src/cv_candidates.py</code>, <code>src/final_blend.py</code></li>
+        <li><code>src/stress_tests.py</code>, <code>src/cost_thresholds.py</code>, <code>src/train_final_v2.py</code>, <code>src/predict_v2.py</code></li>
+        <li><code>reports/v2_*.csv</code>, <code>reports/stress_*.csv</code>, <code>reports/umbrales_por_costo.csv</code>, <code>reports/final_v2_test.csv</code></li>
+        <li><code>artifacts/v2/manifest.json</code></li>
+      </ul>
+    </div>
+  </div>
+</details>
+<footer>Todas las cifras se generan desde los CSV de <span class="mono">reports/</span> del repositorio, sin redondear a favor.</footer>
+</div>
