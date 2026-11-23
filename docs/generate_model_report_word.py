@@ -116,17 +116,26 @@ def metric(value) -> str:
     return f"{float(value):.5f}"
 
 
-def build_chart(validation: pd.DataFrame) -> None:
-    order = validation.sort_values("auc", ascending=True)
+def build_chart(validation: pd.DataFrame, score32: pd.DataFrame) -> None:
+    score_mask = score32.loc[score32["candidate"] == "score_mask_32"].iloc[0]
+    comparison = pd.concat([
+        validation[["candidate", "auc"]],
+        pd.DataFrame([{"candidate": "score_mask_32", "auc": float(score_mask["auc"])}]),
+    ], ignore_index=True)
+    order = comparison.sort_values("auc", ascending=True)
     labels = order["candidate"].replace({
         "baseline_production": "Ensamble publicado",
         "elu_input_noise": "ELU con ruido de entrada",
         "elu_regularized": "ELU regularizado",
         "wide_elu_regularized": "ELU amplio regularizado",
         "compact_gelu": "GELU compacto",
+        "score_mask_32": "Score enmascarado 32%",
     })
-    colors = [f"#{TEAL}" if c == "baseline_production" else "#8DA7B8" for c in order["candidate"]]
-    fig, ax = plt.subplots(figsize=(8.3, 4.3), dpi=180)
+    colors = [
+        f"#{TEAL}" if c == "baseline_production" else "#C97A40" if c == "score_mask_32" else "#8DA7B8"
+        for c in order["candidate"]
+    ]
+    fig, ax = plt.subplots(figsize=(8.3, 4.9), dpi=180)
     bars = ax.barh(labels, order["auc"], color=colors, height=0.58)
     ax.set_xlim(0.748, 0.755)
     ax.set_xlabel("ROC AUC en validation")
@@ -182,7 +191,7 @@ def main() -> None:
     epochs = pd.read_csv(REPORTS / "phase5_generalization_epochs.csv")
     test = pd.read_csv(REPORTS / "phase5_generalization_test.csv")
     score32 = pd.read_csv(REPORTS / "phase4_score32_candidate_comparison.csv")
-    build_chart(validation)
+    build_chart(validation, score32)
 
     document = Document()
     section = document.sections[0]
@@ -234,7 +243,7 @@ def main() -> None:
 
     document.add_heading("Búsqueda de generalización", level=1)
     document.add_picture(str(CHART), width=Inches(6.55))
-    cap = document.add_paragraph("Figura 1. Comparación ROC AUC en validation. La barra verde representa el modelo publicado.", style="Caption")
+    cap = document.add_paragraph("Figura 1. Comparación ROC AUC en validation. Verde: modelo publicado. Naranja: score enmascarado al 32%.", style="Caption")
     cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
     display = validation.copy()
     display["candidate"] = display["candidate"].replace({
