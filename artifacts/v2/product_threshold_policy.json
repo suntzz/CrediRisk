@@ -1,0 +1,108 @@
+{
+  "version": "v2",
+  "tipo": "lista_de_permitidos",
+  "productos_permitidos": [
+    "Cash loans",
+    "Revolving loans"
+  ],
+  "productos_bloqueados": [
+    "Mortgage loans"
+  ],
+  "regla": "aprobar si p_apto_real >= c/(1+c); p_apto_real = isotónica + corrección a mora real",
+  "mora_real_supuesta": 0.0807,
+  "proporcion_aptos_entrenamiento": 0.5,
+  "costo_por_defecto": 10,
+  "umbrales_p_apto_real": {
+    "Cash loans": {
+      "5": 0.8333333333333334,
+      "10": 0.9090909090909091,
+      "20": 0.9523809523809523
+    },
+    "Revolving loans": {
+      "5": 0.8333333333333334,
+      "10": 0.9090909090909091,
+      "20": 0.9523809523809523
+    }
+  },
+  "resultados_oof": [
+    {
+      "producto": "Cash loans",
+      "n": 38724,
+      "costo_malo_vs_bueno": 5,
+      "umbral": 0.8333333333333334,
+      "tasa_aprobacion": 0.8706023376419812,
+      "tasa_aprobacion_ci_low": 0.8665728186727478,
+      "tasa_aprobacion_ci_high": 0.8741908099426838,
+      "mora_aprobados": 0.055774492402141274,
+      "mora_aprobados_ci_low": 0.05515072568277804,
+      "mora_aprobados_ci_high": 0.05641770833697928,
+      "ganancia_por_solicitante": 0.5792579168453865
+    },
+    {
+      "producto": "Cash loans",
+      "n": 38724,
+      "costo_malo_vs_bueno": 10,
+      "umbral": 0.9090909090909091,
+      "tasa_aprobacion": 0.6958432103228869,
+      "tasa_aprobacion_ci_low": 0.6899956733917102,
+      "tasa_aprobacion_ci_high": 0.7014950068167772,
+      "mora_aprobados": 0.03972772654040268,
+      "mora_aprobados_ci_low": 0.039015633761317836,
+      "mora_aprobados_ci_high": 0.040456234112704506,
+      "ganancia_por_solicitante": 0.39175625380114776
+    },
+    {
+      "producto": "Cash loans",
+      "n": 38724,
+      "costo_malo_vs_bueno": 20,
+      "umbral": 0.9523809523809523,
+      "tasa_aprobacion": 0.4268855565466198,
+      "tasa_aprobacion_ci_low": 0.4197681506528019,
+      "tasa_aprobacion_ci_high": 0.4333424423191249,
+      "mora_aprobados": 0.02462912747613081,
+      "mora_aprobados_ci_low": 0.023785858530904706,
+      "mora_aprobados_ci_high": 0.025662266409386087,
+      "ganancia_por_solicitante": 0.20609536195859918
+    },
+    {
+      "producto": "Revolving loans",
+      "n": 3478,
+      "costo_malo_vs_bueno": 5,
+      "umbral": 0.8333333333333334,
+      "tasa_aprobacion": 0.9502112821092151,
+      "tasa_aprobacion_ci_low": 0.9418205674061361,
+      "tasa_aprobacion_ci_high": 0.9580168872803776,
+      "mora_aprobados": 0.06827827335202764,
+      "mora_aprobados_ci_low": 0.06651748741077151,
+      "mora_aprobados_ci_high": 0.0696974683958915,
+      "ganancia_por_solicitante": 0.5609385681370134
+    },
+    {
+      "producto": "Revolving loans",
+      "n": 3478,
+      "costo_malo_vs_bueno": 10,
+      "umbral": 0.9090909090909091,
+      "tasa_aprobacion": 0.8231738608889168,
+      "tasa_aprobacion_ci_low": 0.8101045588361674,
+      "tasa_aprobacion_ci_high": 0.8364248994355087,
+      "mora_aprobados": 0.05357153007794448,
+      "mora_aprobados_ci_low": 0.050688105587656976,
+      "mora_aprobados_ci_high": 0.0563459862886577,
+      "ganancia_por_solicitante": 0.3380883451610455
+    },
+    {
+      "producto": "Revolving loans",
+      "n": 3478,
+      "costo_malo_vs_bueno": 20,
+      "umbral": 0.9523809523809523,
+      "tasa_aprobacion": 0.5883296728357434,
+      "tasa_aprobacion_ci_low": 0.5693301615135127,
+      "tasa_aprobacion_ci_high": 0.6034828029089269,
+      "mora_aprobados": 0.03552119184645665,
+      "mora_aprobados_ci_low": 0.03258624692707458,
+      "mora_aprobados_ci_high": 0.03924208862642774,
+      "ganancia_por_solicitante": 0.14946807810275162
+    }
+  ],
+  "nota": "Mismo umbral teórico por producto; cambia la tasa de aprobación porque cambia la distribución de riesgo."
+}

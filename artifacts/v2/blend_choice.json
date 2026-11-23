@@ -1,0 +1,37 @@
+{
+  "redes": "redes v2 (arreglo + razones)",
+  "componente_redes": "v2_neural",
+  "componente_redes_sin_score": "ns_neural",
+  "peso_hgb_con_score": 0.9,
+  "peso_hgb_sin_score": 0.9,
+  "peso_con_score": 0.85,
+  "peso_con_score_revolving": null,
+  "revolving_bootstrap": {
+    "diff": 0.0,
+    "ci_low": 0.0,
+    "ci_high": 0.0,
+    "significant": false
+  },
+  "lam_revolving_mejor": 0.85,
+  "nota_peso_con_score": null,
+  "nota_peso_sin_score": {
+    "peso_optimo_libre": 0.95,
+    "diff_al_forzar_0.10_redes": {
+      "diff": -4.935966716135276e-05,
+      "ci_low": -0.00016566085908501781,
+      "ci_high": 6.317749406715424e-05,
+      "significant": false
+    }
+  },
+  "auc_oof_final": 0.7617143387359225,
+  "auc_oof_produccion": 0.7578060076119738,
+  "diff_vs_produccion": {
+    "diff": 0.003908331123948727,
+    "ci_low": 0.00279224512305106,
+    "ci_high": 0.004940796261030953,
+    "significant": true
+  },
+  "dependencia_final_pct": 48.84933205787272,
+  "dependencia_produccion_pct": 60.133777116891935,
+  "nota": "Repetición 0 de la validación cruzada 5 pliegues (las redes nuevas solo tienen 1 repetición)."
+}

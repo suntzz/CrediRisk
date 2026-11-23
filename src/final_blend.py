@@ -72,8 +72,7 @@ if v2 is not None:
 else:  # plan de contingencia: redes de producción, peso 0,10
     NET, NET_LABEL = (base, "neural"), "redes de producción"
     NS = None
-if fix is not None and v2 is not None and auc(comp(fix, "fix_neural")) > auc(comp(v2, "v2_neural")):
-    NET, NET_LABEL = (fix, "fix_neural"), "redes con solo el arreglo"
+# mlp_fix solo se usa para aislar el efecto del arreglo en la cascada; el modelo ya quedó elegido con v2_neural.
 HGB = (lab, "razones_B_3sem")
 HGB_NS = (lab, "sin_score_B")
 PROD = [(0.65, base, "hgb"), (0.35, base, "neural")]
@@ -165,7 +164,7 @@ steps = [("Producción (hoy)", PROD)]
 if fix is not None:
     steps.append(("Redes: arreglo de imputación", [(0.65, base, "hgb"), (0.35, fix, "fix_neural")]))
 if v2 is not None:
-    steps.append(("Redes: + razones entre variables", [(0.65, base, "hgb"), (0.35, v2, "v2_neural")]))
+    steps.append(("Redes: arreglo de imputación + razones", [(0.65, base, "hgb"), (0.35, v2, "v2_neural")]))
 net_now = steps[-1][1][1][1:]
 steps += [
     ("Árbol sobre datos crudos", [(0.65, lab, "crudo_A"), (0.35, *net_now)]),

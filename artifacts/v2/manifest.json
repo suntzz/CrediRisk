@@ -1,0 +1,103 @@
+{
+  "nombre": "CrediRisk híbrido v2",
+  "arquitectura": "HistGradientBoosting + 3 redes MLP (cv_protocol.MLP_SPECS), con y sin score",
+  "formula": "final = peso_con_score*(w*HGB + (1-w)*redes) + (1-peso_con_score)*(w2*HGB_sin_score + (1-w2)*redes_sin_score)",
+  "peso_hgb_con_score_w": 0.9,
+  "peso_hgb_sin_score_w2": 0.9,
+  "peso_con_score": 0.85,
+  "peso_con_score_revolving": null,
+  "hgb_config": {
+    "max_iter": 2000,
+    "learning_rate": 0.02,
+    "max_leaf_nodes": 15,
+    "min_samples_leaf": 80,
+    "l2_regularization": 5.0,
+    "max_features": 0.6,
+    "early_stopping": true,
+    "validation_fraction": 0.12,
+    "n_iter_no_change": 60,
+    "random_state": 42
+  },
+  "hgb_semillas_con_score": [
+    42,
+    7,
+    2026,
+    1,
+    21
+  ],
+  "hgb_semillas_sin_score": [
+    42
+  ],
+  "redes": "redes v2 (arreglo + razones)",
+  "redes_specs": [
+    {
+      "name": "m1",
+      "layers": [
+        64,
+        32,
+        16
+      ],
+      "activation": "relu",
+      "dropout": 0.15,
+      "dropout_layers": "first_two",
+      "lr": 0.0005,
+      "seed": 42,
+      "monitor": "val_auc",
+      "mode": "max"
+    },
+    {
+      "name": "m2",
+      "layers": [
+        32,
+        16
+      ],
+      "activation": "leaky_relu",
+      "dropout": 0.15,
+      "dropout_layers": "all_except_last",
+      "lr": 0.0005,
+      "seed": 42,
+      "monitor": "val_auc",
+      "mode": "max"
+    },
+    {
+      "name": "m3",
+      "layers": [
+        64,
+        32,
+        16
+      ],
+      "activation": "relu",
+      "dropout": 0.2,
+      "dropout_layers": "first_two",
+      "lr": 0.001,
+      "seed": 2026,
+      "monitor": "val_loss",
+      "mode": "min"
+    }
+  ],
+  "archivos_redes": {
+    "redes": [
+      "redes_m1.keras",
+      "redes_m2.keras",
+      "redes_m3.keras"
+    ],
+    "redes_sin_score": [
+      "redes_sin_score_m1.keras",
+      "redes_sin_score_m2.keras",
+      "redes_sin_score_m3.keras"
+    ]
+  },
+  "filas_entrenamiento": 42202,
+  "auc_validacion_cruzada": 0.7617143387359225,
+  "auc_validacion_cruzada_produccion": 0.7578060076119738,
+  "diferencia_vs_produccion_ic95": {
+    "diff": 0.003908331123948727,
+    "ci_low": 0.00279224512305106,
+    "ci_high": 0.004940796261030953,
+    "significant": true
+  },
+  "dependencia_score_pct": 48.84933205787272,
+  "calibrador": "calibrador_isotonico.joblib",
+  "politica": "product_threshold_policy.json",
+  "nota": "AUC de validación cruzada sobre la repetición 0 (5 pliegues). En la validación cruzada el HGB con score usó 3 semillas; aquí 5."
+}
