@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "status": "validated",
+  "phase": "phase4_score32",
+  "selected_candidate": "baseline_historico",
+  "selection_split": "validation",
+  "objective": "balanced_accuracy",
+  "default_threshold": 0.5,
+  "thresholds": {
+    "Cash loans": {
+      "n_validation": 6848,
+      "threshold": 0.51,
+      "auc": 0.7531571126071601,
+      "pr_auc": 0.7420020245344445,
+      "log_loss": 0.5890963077545166,
+      "brier": 0.20187883079051971,
+      "accuracy": 0.6921728971962616,
+      "precision": 0.6936936936936937,
+      "recall": 0.6655737704918033,
+      "f1": 0.6793428658351081,
+      "balanced_accuracy": 0.6916474635453578,
+      "tn": 2507,
+      "fp": 986,
+      "fn": 1122,
+      "tp": 2233,
+      "approval_rate": 0.4700642523364486
+    },
+    "Revolving loans": {
+      "n_validation": 599,
+      "threshold": 0.63,
+      "auc": 0.7353660831921702,
+      "pr_auc": 0.8064069634023703,
+      "log_loss": 0.586005687713623,
+      "brier": 0.20049534738063812,
+      "accuracy": 0.6527545909849749,
+      "precision": 0.7962962962962963,
+      "recall": 0.5842391304347826,
+      "f1": 0.6739811912225705,
+      "balanced_accuracy": 0.6730719461697723,
+      "tn": 176,
+      "fp": 55,
+      "fn": 153,
+      "tp": 215,
+      "approval_rate": 0.4507512520868113
+    }
+  },
+  "unsupported_products": {
+    "Mortgage loans": "No hay registros etiquetados de crédito hipotecario en el dataset actual."
+  },
+  "score_importance": {
+    "method": "permutation_auc_drop_validation",
+    "score_auc_drop": 0.16034072845672756
+  },
+  "test_metrics_file": "reports/phase4_score32_product_test_metrics.csv"
+}

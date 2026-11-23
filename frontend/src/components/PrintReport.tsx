@@ -119,7 +119,7 @@ export const PrintReport: React.FC<PrintReportProps> = ({
           </span>
           <span>|</span>
           <span>
-            <strong>Umbral Requerido:</strong> 50.00%
+            <strong>Umbral Requerido:</strong> {(result.threshold * 100).toFixed(2)}%
           </span>
         </div>
       </div>

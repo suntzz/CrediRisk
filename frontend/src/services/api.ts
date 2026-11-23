@@ -19,6 +19,11 @@ type LayerSpec = DenseLayerSpec | LeakyReLULayerSpec;
 
 interface ModelBundle {
   threshold: number;
+  product_threshold_policy?: {
+    default_threshold: number;
+    thresholds: Record<string, { threshold: number }>;
+    unsupported_products?: Record<string, string>;
+  };
   preprocessor: {
     drop_cols: string[];
     target: string;
@@ -323,6 +328,12 @@ export async function predictApplicant(data: ApplicantFormData): Promise<Predict
   }
 
   const bundle = await getModelBundle();
+  const product = String(data.linea_negocio ?? '');
+  const policy = bundle.product_threshold_policy;
+  if (policy?.unsupported_products?.[product]) {
+    throw new Error(policy.unsupported_products[product]);
+  }
+  const threshold = policy?.thresholds?.[product]?.threshold ?? policy?.default_threshold ?? bundle.threshold;
   const x = preprocessApplicant(data, bundle.preprocessor);
   const useEnsemble = (data.model_type ?? 'ensemble') === 'ensemble';
 
@@ -336,15 +347,15 @@ export async function predictApplicant(data: ApplicantFormData): Promise<Predict
 
   const probApto = Number(rawProb.toFixed(4));
   const probNoApto = Number((1.0 - rawProb).toFixed(4));
-  const resultado = rawProb >= bundle.threshold ? 'APTO' : 'NO APTO';
+  const resultado = rawProb >= threshold ? 'APTO' : 'NO APTO';
 
   return {
     id_solicitud: data.id_solicitud ?? 999001,
     resultado,
     probabilidad_apto: probApto,
     probabilidad_no_apto: probNoApto,
-    threshold: bundle.threshold,
-    decision_rule: `P(APTO) >= ${bundle.threshold} => APTO, de lo contrario NO APTO`,
+    threshold,
+    decision_rule: `P(APTO) >= ${threshold.toFixed(2)} para ${product} => APTO, de lo contrario NO APTO`,
     modelo_utilizado: {
       nombre: useEnsemble ? 'Ensemble_Top3_Diverso' : 'Single_Best_Model (cfg_c_s42)',
       tipo: useEnsemble

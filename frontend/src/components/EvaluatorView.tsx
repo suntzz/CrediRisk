@@ -643,10 +643,10 @@ export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
                   {/* 50% Threshold marker */}
                   <div 
                     className="absolute top-2 bottom-0 w-0.5 bg-slate-900 dark:bg-white z-10 flex flex-col items-center"
-                    style={{ left: '50%' }}
+                    style={{ left: `${prediction.threshold * 100}%` }}
                   >
                     <span className="absolute -top-4 text-[10px] font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                      Umbral 50%
+                      Umbral {(prediction.threshold * 100).toFixed(0)}%
                     </span>
                   </div>
                 </div>
@@ -660,8 +660,8 @@ export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
               {/* Scientific Interpretation */}
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed max-w-lg mx-auto mt-6">
                 {prediction.resultado === 'APTO'
-                  ? `La probabilidad estimada (${(prediction.probabilidad_apto * 100).toFixed(2)}%) supera el umbral estricto de decisión (50.00%). El perfil financiero y de buró se clasifica dentro de la categoría de cumplimiento.`
-                  : `La probabilidad estimada (${(prediction.probabilidad_apto * 100).toFixed(2)}%) se sitúa por debajo del umbral estricto de decisión (50.00%). El perfil refleja factores de riesgo que comprometen la viabilidad crediticia.`}
+                  ? `La probabilidad estimada (${(prediction.probabilidad_apto * 100).toFixed(2)}%) supera el umbral de decisión de esta línea de crédito (${(prediction.threshold * 100).toFixed(2)}%). El perfil financiero y de buró se clasifica dentro de la categoría de cumplimiento.`
+                  : `La probabilidad estimada (${(prediction.probabilidad_apto * 100).toFixed(2)}%) se sitúa por debajo del umbral de decisión de esta línea de crédito (${(prediction.threshold * 100).toFixed(2)}%). El perfil refleja factores de riesgo que comprometen la viabilidad crediticia.`}
               </p>
             </div>
 
@@ -1582,7 +1582,7 @@ export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
                       <span>Motor de Evaluación: Ensemble Top-3 Diverso (Equiponderado)</span>
                     </div>
                     <p className="text-[11px] text-blue-900/80 dark:text-blue-300/80 leading-relaxed pl-6">
-                      El cálculo promediará las salidas probabilísticas de tres redes profundas con semillas y activaciones heterogéneas. Umbral operativo = 50.00%.
+                      El cálculo promediará las salidas probabilísticas de tres redes profundas con semillas y activaciones heterogéneas. El umbral operativo se calibra por línea de crédito.
                     </p>
                   </div>
                 </div>

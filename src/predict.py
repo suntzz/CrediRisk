@@ -21,7 +21,11 @@ def load_model_and_preprocessor(model_path=None, use_ensemble=False):
     pre = joblib.load(C.ARTIFACTS / "preprocessor.joblib")
 
     if use_ensemble:
-        manifest_path = C.ARTIFACTS / "ensemble_manifest.json"
+        # Fase 4 puede promover una variante validada sin sobrescribir el ensamble
+        # histórico. Si no existe, se conserva el comportamiento anterior.
+        manifest_path = C.ARTIFACTS / "production_manifest.json"
+        if not manifest_path.exists():
+            manifest_path = C.ARTIFACTS / "ensemble_manifest.json"
         manifest = json.loads(manifest_path.read_text())
         models = [keras.models.load_model(C.ARTIFACTS / m["file"]) for m in manifest["models"]]
         return pre, models
@@ -36,7 +40,7 @@ def load_model_and_preprocessor(model_path=None, use_ensemble=False):
     return pre, model
 
 
-def score(df: pd.DataFrame, pre, model_or_models, use_ensemble=False) -> pd.DataFrame:
+def score(df: pd.DataFrame, pre, model_or_models, use_ensemble=False, threshold: float = C.THRESHOLD) -> pd.DataFrame:
     X = pre.transform(df)
     if use_ensemble:
         probs = np.mean([m.predict(X, verbose=0).ravel() for m in model_or_models], axis=0)
@@ -51,7 +55,7 @@ def score(df: pd.DataFrame, pre, model_or_models, use_ensemble=False) -> pd.Data
     out["probabilidad_apto"] = probs.round(4)
     out["probabilidad_no_apto"] = (1.0 - probs).round(4)
     out["resultado"] = [
-        "APTO" if v >= C.THRESHOLD else "NO APTO" for v in probs
+        "APTO" if v >= threshold else "NO APTO" for v in probs
     ]
     return out
 

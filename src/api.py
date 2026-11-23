@@ -23,6 +23,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 import config as C
 from predict import load_model_and_preprocessor, score
+from product_policy import is_supported_product, load_policy, threshold_for_product
 
 os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
 
@@ -46,17 +47,21 @@ _preprocessor = None
 _ensemble_models = None
 _single_model = None
 _ensemble_manifest = None
+_product_policy = None
 
 
 def get_artifacts():
-    global _preprocessor, _ensemble_models, _single_model, _ensemble_manifest
+    global _preprocessor, _ensemble_models, _single_model, _ensemble_manifest, _product_policy
     if _preprocessor is None:
         _preprocessor, _ensemble_models = load_model_and_preprocessor(use_ensemble=True)
         _, _single_model = load_model_and_preprocessor(use_ensemble=False)
-        manifest_path = C.ARTIFACTS / "ensemble_manifest.json"
+        manifest_path = C.ARTIFACTS / "production_manifest.json"
+        if not manifest_path.exists():
+            manifest_path = C.ARTIFACTS / "ensemble_manifest.json"
         if manifest_path.exists():
             _ensemble_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    return _preprocessor, _ensemble_models, _single_model, _ensemble_manifest
+        _product_policy = load_policy()
+    return _preprocessor, _ensemble_models, _single_model, _ensemble_manifest, _product_policy
 
 
 class ApplicantInput(BaseModel):
@@ -89,12 +94,13 @@ class ApplicantInput(BaseModel):
 
 @app.get("/api/health")
 def health_check():
-    pre, ensemble_models, single_model, manifest = get_artifacts()
+    pre, ensemble_models, single_model, manifest, policy = get_artifacts()
     return {
         "status": "healthy",
         "service": "CrediRisk Deep Learning Inference API",
         "dataset_verified_sha256": "19c5b59ccce6face1a0b828d201605aeb0e70b214f7ed60be2efdf13f47f851d",
-        "threshold": C.THRESHOLD,
+        "threshold": policy["default_threshold"],
+        "product_threshold_policy": policy,
         "ensemble_available": ensemble_models is not None,
         "single_model_available": single_model is not None,
         "models_in_ensemble": len(ensemble_models) if ensemble_models else 0,
@@ -328,7 +334,7 @@ def analyze_risk_factors(applicant: dict) -> List[Dict[str, Any]]:
     """Genera indicadores contextuales de riesgo basados en la importancia empírica de variables."""
     factors = []
 
-    # 1. Score crediticio (68.4% importancia empírica)
+    # 1. Score crediticio: factor importante, interpretado junto al resto del perfil.
     score = applicant.get("score_crediticio", 0)
     if score >= 680:
         factors.append({
@@ -428,11 +434,20 @@ def analyze_risk_factors(applicant: dict) -> List[Dict[str, Any]]:
 
 @app.post("/api/predict")
 def predict_credit(applicant: ApplicantInput):
-    pre, ensemble_models, single_model, manifest = get_artifacts()
+    pre, ensemble_models, single_model, manifest, policy = get_artifacts()
 
     # Convertir datos a DataFrame para el pipeline
     data_dict = applicant.model_dump()
     model_choice = data_dict.pop("model_type", "ensemble")
+
+    product = str(data_dict.get("linea_negocio", ""))
+    if not is_supported_product(product, policy):
+        raise HTTPException(
+            status_code=422,
+            detail=("Crédito hipotecario aún no puede evaluarse: el dataset actual no incluye "
+                    "casos hipotecarios etiquetados para entrenar y validar su política."),
+        )
+    threshold = threshold_for_product(product, policy)
 
     # Si no se pasó id_solicitud, generar un consecutivo
     if data_dict.get("id_solicitud") is None:
@@ -447,7 +462,7 @@ def predict_credit(applicant: ApplicantInput):
         raise HTTPException(status_code=500, detail="Modelo neuronal no cargado")
 
     try:
-        scored = score(df_applicant, pre, chosen_model, use_ensemble=use_ensemble)
+        scored = score(df_applicant, pre, chosen_model, use_ensemble=use_ensemble, threshold=threshold)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error en inferencia de datos: {str(e)}")
 
@@ -463,8 +478,8 @@ def predict_credit(applicant: ApplicantInput):
         "resultado": resultado,  # "APTO" o "NO APTO"
         "probabilidad_apto": prob_apto,
         "probabilidad_no_apto": prob_no_apto,
-        "threshold": C.THRESHOLD,
-        "decision_rule": f"P(APTO) >= {C.THRESHOLD} => APTO, de lo contrario NO APTO",
+        "threshold": threshold,
+        "decision_rule": f"P(APTO) >= {threshold:.2f} para {product} => APTO, de lo contrario NO APTO",
         "modelo_utilizado": {
             "nombre": "Ensemble_Top3_Diverso" if use_ensemble else "Single_Best_Model (cfg_c_s42)",
             "tipo": "Ensamble de 3 redes neuronales con arquitecturas y activaciones heterogéneas" if use_ensemble else "Red neuronal profunda [64, 32, 16] ReLU",

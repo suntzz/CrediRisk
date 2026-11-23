@@ -14,6 +14,7 @@ sys.path.insert(0, str(ROOT / "src"))
 import config as C
 from api import health_check, get_sample_applicant, get_metrics
 from predict import load_model_and_preprocessor
+from product_policy import load_policy
 
 OUT_DIR = ROOT / "frontend" / "public" / "api-static"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -52,6 +53,7 @@ def main():
 
     bundle = {
         "threshold": float(C.THRESHOLD),
+        "product_threshold_policy": load_policy(),
         "preprocessor": {
             "drop_cols": list(C.DROP_COLS),
             "target": C.TARGET,
